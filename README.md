@@ -1,32 +1,34 @@
-# React + TypeScript + Vite
+# song-audio — studio de musique dans le navigateur
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Un studio de musique multi-instruments qui fonctionne dans le navigateur : plusieurs
+instruments jouent ensemble, et chacun a une vue (clavier, batterie, manche…) qui s'allume
+pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
+[docs/PLAN.md](docs/PLAN.md).
 
-Currently, two official plugins are available:
+**Avancement : étape 0 (fondations) terminée.**
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+- Modèle de projet (canaux, patterns, playlist, mixage), sauvegarde JSON vérifiée
+- Import de fichiers MIDI multi-pistes : chaque piste garde son instrument General MIDI,
+  la batterie est reconnue, la pédale est appliquée
+- Transport : notes programmées à l'avance sur l'horloge audio, boucle, pause, tempo
+- Moteur sonore : SpessaSynth et la banque GeneralUser GS (128 instruments + batterie)
 
-## React Compiler
+## Commandes
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
-
-## Expanding the Oxlint configuration
-
-If you are developing a production application, we recommend enabling type-aware lint rules by installing `oxlint-tsgolint` and editing `.oxlintrc.json`:
-
-```json
-{
-  "$schema": "./node_modules/oxlint/configuration_schema.json",
-  "plugins": ["react", "typescript", "oxc"],
-  "options": {
-    "typeAware": true
-  },
-  "rules": {
-    "react/rules-of-hooks": "error",
-    "react/only-export-components": ["warn", { "allowConstantExport": true }]
-  }
-}
+```bash
+npm install
+npm run dev        # http://localhost:5173
+npm test           # tests unitaires (Vitest)
+npm run test:e2e   # tests navigateur (Playwright, Chromium)
+npm run build
 ```
 
-See the [Oxlint rules documentation](https://oxc.rs/docs/guide/usage/linter/rules) for the full list of rules and categories.
+Pour les tests navigateur, installer une fois Chromium : `npx playwright install chromium`.
+
+## Crédits et licences
+
+- **Sons** : [GeneralUser GS](https://schristiancollins.com/generaluser.php) v2.0.3,
+  S. Christian Collins (licence dans `public/soundfonts/GeneralUserGS-LICENSE.txt`), dans la
+  version SF3 publiée par le projet SpessaSynth.
+- **Moteur** : [SpessaSynth](https://github.com/spessasus/spessasynth_lib) (Apache-2.0).
+- **Fichiers MIDI** : [@tonejs/midi](https://github.com/Tonejs/Midi) (MIT).
