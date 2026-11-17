@@ -93,7 +93,12 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   le Channel Rack ; réverbération et chorus du synthétiseur coupés. Limite : 16 sorties séparées
   (au-delà, deux canaux partagent une tranche). 62 tests unitaires, 38 tests navigateur (mesures
   du son de chaque piste).
-- [ ] Étape 6 — playlist
+- [x] **Étape 6 — playlist** : plusieurs patterns (créer, dupliquer, renommer, supprimer, choisir dans
+  la barre de transport ou la liste) ; playlist avec règle des mesures (clic : aller à cet
+  endroit), pistes, clips aimantés à la mesure (poser, glisser, supprimer au clic droit, double
+  clic pour choisir le pattern), aperçu des notes, tête de lecture, zoom ; mode PAT/SONG : le
+  transport joue tout l'arrangement et boucle à sa fin. 67 tests unitaires, 42 tests navigateur.
+- [ ] Étape 7 — vues d'instruments avancées
 
 ## Notes techniques vérifiées
 

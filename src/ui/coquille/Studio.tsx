@@ -5,11 +5,11 @@ import { type DockviewApi, type DockviewMessages, DockviewReact, type DockviewTh
 import 'dockview-react/dist/styles/dockview.css'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStudio } from '../../etat/studio'
-import { Attente } from '../panneaux/Attente'
 import { ChannelRack } from '../panneaux/ChannelRack'
 import { Mixer } from '../panneaux/Mixer'
 import { Navigateur } from '../panneaux/Navigateur'
 import { PianoRoll } from '../panneaux/PianoRoll'
+import { Playlist } from '../panneaux/Playlist'
 import { VueInstrument } from '../panneaux/VueInstrument'
 import { BarreTransport } from './BarreTransport'
 import { type ApiDock, basculerPanneau, CLE_DISPOSITION, dispositionParDefaut, type IdPanneau, ouvrirPanneau } from './panneaux'
@@ -42,7 +42,7 @@ const messages: DockviewMessages = {
 const composants: Record<IdPanneau, React.FunctionComponent<IDockviewPanelProps>> = {
   navigateur: () => <Navigateur />,
   rack: () => <ChannelRack />,
-  playlist: () => <Attente titre="Playlist" etape="6" description="Les patterns placés dans le temps pour former le morceau." />,
+  playlist: () => <Playlist />,
   pianoroll: () => <PianoRoll />,
   instrument: () => <VueInstrument />,
   mixer: () => <Mixer />,

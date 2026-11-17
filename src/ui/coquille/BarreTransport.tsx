@@ -25,7 +25,10 @@ export function BarreTransport({ ouvrirPanneau, panneauxOuverts }: {
   ouvrirPanneau: (id: IdPanneau) => void
   panneauxOuverts: ReadonlySet<string>
 }) {
-  const { transport, chargement, projet, enregistrement, basculerEnregistrement, basculerLecture, arreter, changerTempo, changerVolumeMaitre } = useStudio()
+  const {
+    transport, chargement, projet, enregistrement, mode, basculerEnregistrement, basculerLecture, arreter, changerTempo,
+    changerVolumeMaitre, changerMode, choisirPattern, nouveauPattern, dupliquerPattern,
+  } = useStudio()
   const position = useImage(() => audio.transport?.position ?? 0)
   const pret = chargement.phase === 'pret'
   const statut =
@@ -66,12 +69,37 @@ export function BarreTransport({ ouvrirPanneau, panneauxOuverts }: {
           <span aria-hidden className="mr-1 text-red-400 in-aria-pressed:text-white">●</span>Rec
         </button>
         <span className="ml-1 inline-flex overflow-hidden rounded border border-bord" role="group" aria-label="Mode de lecture">
-          <span className="bg-accent/90 px-2 py-1 font-semibold text-black" title="Lecture du pattern en boucle">PAT</span>
-          <span className="px-2 py-1 text-discret" title="Lecture du morceau : arrive avec la playlist (étape 6)" aria-disabled>
-            SONG
-          </span>
+          {(['pattern', 'morceau'] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              data-testid={`mode-${m}`}
+              aria-pressed={mode === m}
+              onClick={() => changerMode(m)}
+              title={m === 'pattern' ? 'Le pattern actif en boucle' : "L'arrangement de la playlist"}
+              className="px-2 py-1 text-discret aria-pressed:bg-accent/90 aria-pressed:font-semibold aria-pressed:text-black"
+            >
+              {m === 'pattern' ? 'PAT' : 'SONG'}
+            </button>
+          ))}
         </span>
       </div>
+
+      <span className="flex items-center gap-1" role="group" aria-label="Pattern actif">
+        <select
+          data-testid="choix-pattern"
+          aria-label="Pattern actif"
+          value={projet.patternActif}
+          onChange={(e) => choisirPattern(e.target.value)}
+          className="h-7 max-w-36 rounded border border-black/60 bg-[#0d1013] px-1 text-[12px] text-accent"
+        >
+          {projet.patterns.map((p) => (
+            <option key={p.id} value={p.id}>{p.nom}</option>
+          ))}
+        </select>
+        <button type="button" data-testid="nouveau-pattern" onClick={nouveauPattern} title="Nouveau pattern" className={bouton}>＋</button>
+        <button type="button" data-testid="dupliquer-pattern" onClick={dupliquerPattern} title="Dupliquer le pattern actif" className={bouton}>⧉</button>
+      </span>
 
       <label className="flex items-center gap-1 text-discret" title="Tempo, noires par minute">
         <input

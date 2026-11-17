@@ -5,7 +5,7 @@
 
 import { attribuerCanauxMidi, canauxAudibles, type Pattern, type Projet } from '../projet/modele'
 import { decalageSwing } from '../projet/pas'
-import { secondesEnTics, ticsEnSecondes } from '../musique/temps'
+import { arrondirALaMesure, secondesEnTics, ticsEnSecondes } from '../musique/temps'
 
 export interface Destination {
   noteOn(canal: number, hauteur: number, velocite: number, temps: number): void
@@ -66,6 +66,32 @@ export function evenementsDuPattern(projet: Projet, pattern: Pattern): Evenement
   return evenements.sort((a, b) => a.tic - b.tic || Number(a.allume) - Number(b.allume))
 }
 
+/** Mode de lecture : le pattern actif en boucle (PAT), ou tout l'arrangement de la playlist (SONG). */
+export type ModeLecture = 'pattern' | 'morceau'
+
+/** Fin du morceau : la fin du dernier clip, arrondie à la mesure (au moins une mesure). */
+export function longueurDuMorceau(projet: Projet): number {
+  let fin = 0
+  for (const clip of projet.playlist) {
+    const pattern = projet.patterns.find((p) => p.id === clip.pattern)
+    if (pattern) fin = Math.max(fin, clip.debut + pattern.longueur)
+  }
+  return arrondirALaMesure(fin, projet.signature)
+}
+
+/** Événements de tout l'arrangement : ceux de chaque clip, décalés à son début. */
+export function evenementsDuMorceau(projet: Projet): Evenement[] {
+  const parPattern = new Map<string, Evenement[]>()
+  const evenements: Evenement[] = []
+  for (const clip of projet.playlist) {
+    const pattern = projet.patterns.find((p) => p.id === clip.pattern)
+    if (!pattern) continue
+    if (!parPattern.has(pattern.id)) parPattern.set(pattern.id, evenementsDuPattern(projet, pattern))
+    for (const e of parPattern.get(pattern.id)!) evenements.push({ ...e, tic: e.tic + clip.debut })
+  }
+  return evenements.sort((a, b) => a.tic - b.tic || Number(a.allume) - Number(b.allume))
+}
+
 export const minuterieNavigateur: Minuterie = {
   demarrer: (rappel, periodeMs) => setInterval(rappel, periodeMs),
   arreter: (jeton) => clearInterval(jeton as ReturnType<typeof setInterval>),
@@ -79,6 +105,7 @@ export class Transport {
   #projet: Projet | null = null
   #evenements: Evenement[] = []
   #longueur = 1
+  #mode: ModeLecture = 'pattern'
   #tempo = 120
   #etat: EtatTransport = 'arret'
   /** Instant audio qui correspond au tic #origineTic. */
@@ -124,15 +151,29 @@ export class Transport {
     return () => this.#ecouteurs.delete(ecouteur)
   }
 
-  /** Charge (ou recharge après une modification) le projet joué. */
-  definirProjet(projet: Projet): void {
+  get mode(): ModeLecture {
+    return this.#mode
+  }
+
+  /** Charge (ou recharge après une modification) le projet joué, dans le mode donné. */
+  definirProjet(projet: Projet, mode: ModeLecture = this.#mode): void {
     const pattern = projet.patterns.find((p) => p.id === projet.patternActif)
     if (!pattern) throw new Error('Pattern actif introuvable')
+    if (mode !== this.#mode) {
+      // l'échelle du temps change (un pattern / tout le morceau) : on repart du début
+      this.arreter()
+      this.#mode = mode
+    }
     if (this.#etat === 'lecture' && projet.tempo !== this.#tempo) this.#reancrer()
     this.#projet = projet
     this.#tempo = projet.tempo
-    this.#longueur = Math.max(1, pattern.longueur)
-    this.#evenements = evenementsDuPattern(projet, pattern)
+    if (mode === 'morceau') {
+      this.#longueur = longueurDuMorceau(projet)
+      this.#evenements = evenementsDuMorceau(projet)
+    } else {
+      this.#longueur = Math.max(1, pattern.longueur)
+      this.#evenements = evenementsDuPattern(projet, pattern)
+    }
   }
 
   jouer(): void {

@@ -6,11 +6,12 @@ import { Midi } from '@tonejs/midi'
 import { produce } from 'immer'
 import { create } from 'zustand'
 import { MoteurSon } from '../audio/moteur'
-import { type EtatTransport, Transport } from '../audio/transport'
+import { type EtatTransport, type ModeLecture, Transport } from '../audio/transport'
 import { creerDemo } from '../projet/demo'
 import { depuisMidi } from '../projet/importMidi'
 import { ajouterCanal, attribuerCanauxMidi, type Canal, creerProjet, modifierCanal, type PisteMixage, type Projet } from '../projet/modele'
 import { definirNombreDePas, definirNoteDefaut, definirPas, definirVelocitePas } from '../projet/pas'
+import * as playlist from '../projet/playlist'
 import { BASE_DEFAUT, decalerBase, detecterDisposition, type DispositionClavier } from '../musique/clavier'
 import type { NoteMusicale } from '../projet/modele'
 
@@ -50,6 +51,18 @@ interface EtatStudio {
   definirNombreDePas(pas: number): void
   changerSwing(swing: number): void
   definirNoteDefaut(canalId: string, hauteur: number): void
+  /** PAT : le pattern actif en boucle ; SONG : l'arrangement de la playlist. */
+  mode: ModeLecture
+  changerMode(mode?: ModeLecture): void
+  nouveauPattern(): void
+  dupliquerPattern(): void
+  renommerPattern(id: string, nom: string): void
+  choisirPattern(id: string): void
+  supprimerPattern(id: string): void
+  /** Pose un clip du pattern actif ; renvoie son identifiant. */
+  ajouterClip(piste: number, debut: number, pattern?: string): string
+  deplacerClip(id: string, piste: number, debut: number): void
+  supprimerClip(id: string): void
   /** Règle une piste du mixer (0 = maître). */
   modifierPiste(index: number, modifications: Partial<Omit<PisteMixage, 'index'>>): void
   /** Envoie un canal vers une piste du mixer. */
@@ -88,7 +101,7 @@ export function projetVide(): Projet {
   for (const [nom, note] of [['Grosse caisse', 36], ['Clap', 39], ['Charleston', 42], ['Caisse claire', 38]] as const) {
     projet = ajouterCanal(projet, { batterie: true, nom, noteDefaut: note }).projet
   }
-  return projet
+  return playlist.ajouterClip(projet, projet.patternActif, 0, 0).projet
 }
 
 let moteur: MoteurSon | null = null
@@ -109,7 +122,7 @@ export const useStudio = create<EtatStudio>()((set, get) => {
   /** Transmet le projet courant au moteur et au transport. */
   const synchroniser = (projet: Projet) => {
     moteur?.appliquerProjet(projet)
-    transport?.definirProjet(projet)
+    transport?.definirProjet(projet, get().mode)
   }
 
   /** Remplace le projet par un fichier MIDI ; faux (et un message) s'il n'a aucune note. */
@@ -257,6 +270,41 @@ export const useStudio = create<EtatStudio>()((set, get) => {
 
     definirNoteDefaut(canalId, hauteur) {
       appliquer(definirNoteDefaut(get().projet, canalId, hauteur))
+    },
+
+    mode: 'pattern',
+    changerMode(mode) {
+      const suivant = mode ?? (get().mode === 'pattern' ? 'morceau' : 'pattern')
+      if (suivant === get().mode) return
+      set({ mode: suivant })
+      transport?.definirProjet(get().projet, suivant)
+    },
+
+    nouveauPattern() {
+      appliquer(playlist.nouveauPattern(get().projet).projet)
+    },
+    dupliquerPattern() {
+      appliquer(playlist.dupliquerPattern(get().projet, get().projet.patternActif).projet)
+    },
+    renommerPattern(id, nom) {
+      appliquer(playlist.renommerPattern(get().projet, id, nom))
+    },
+    choisirPattern(id) {
+      appliquer(playlist.choisirPattern(get().projet, id))
+    },
+    supprimerPattern(id) {
+      appliquer(playlist.supprimerPattern(get().projet, id))
+    },
+    ajouterClip(piste, debut, pattern = get().projet.patternActif) {
+      const { projet, id } = playlist.ajouterClip(get().projet, pattern, piste, debut)
+      appliquer(projet)
+      return id
+    },
+    deplacerClip(id, piste, debut) {
+      appliquer(playlist.deplacerClip(get().projet, id, piste, debut))
+    },
+    supprimerClip(id) {
+      appliquer(playlist.supprimerClip(get().projet, id))
     },
 
     modifierPiste(index, modifications) {
