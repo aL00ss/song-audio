@@ -2,7 +2,7 @@
 
 [![Tests](https://github.com/aL00ss/song-audio/actions/workflows/tests.yml/badge.svg)](https://github.com/aL00ss/song-audio/actions/workflows/tests.yml)
 
-👉 **Essayer le studio : https://al00ss.github.io/song-audio/**
+**Essayer le studio : https://al00ss.github.io/song-audio/**
 
 Un studio de musique multi-instruments qui fonctionne dans le navigateur : plusieurs
 instruments jouent ensemble, et chacun a une vue (clavier, batterie, manche…) qui s'allume
