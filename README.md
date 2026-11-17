@@ -7,7 +7,7 @@ instruments jouent ensemble, et chacun a une vue (clavier, batterie, manche…) 
 pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
 [docs/PLAN.md](docs/PLAN.md).
 
-**Avancement : étapes 0 à 4 terminées (fondations, coquille, navigateur, séquenceur pas à pas, piano roll et vue d'instrument).**
+**Avancement : étapes 0 à 5 terminées (fondations, coquille, navigateur, séquenceur pas à pas, piano roll et vue d'instrument, mixer).**
 
 - Interface de studio : barre de transport, panneaux ancrables (navigateur, Channel Rack,
   playlist, piano roll, instrument, mixer), raccourcis F5 à F9 et Espace, disposition gardée
@@ -18,6 +18,8 @@ pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
 - Piano roll (Canvas) : ajout, déplacement, redimensionnement, lasso, quantification, vélocité
 - Vue d'instrument qui s'allume pendant la lecture : clavier 88 touches ou pads de batterie,
   jouables à la souris et au clavier de l'ordinateur ; enregistrement en direct
+- Mixer : une tranche par piste (égaliseur 3 bandes, fader, panoramique, muet, solo, vumètre
+  stéréo, envoi de réverbération), maître avec limiteur
 
 - Modèle de projet (canaux, patterns, playlist, mixage), sauvegarde JSON vérifiée
 - Import de fichiers MIDI multi-pistes : chaque piste garde son instrument General MIDI,

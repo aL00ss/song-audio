@@ -9,7 +9,7 @@ import { MoteurSon } from '../audio/moteur'
 import { type EtatTransport, Transport } from '../audio/transport'
 import { creerDemo } from '../projet/demo'
 import { depuisMidi } from '../projet/importMidi'
-import { ajouterCanal, attribuerCanauxMidi, type Canal, creerProjet, modifierCanal, type Projet } from '../projet/modele'
+import { ajouterCanal, attribuerCanauxMidi, type Canal, creerProjet, modifierCanal, type PisteMixage, type Projet } from '../projet/modele'
 import { definirNombreDePas, definirNoteDefaut, definirPas, definirVelocitePas } from '../projet/pas'
 import { BASE_DEFAUT, decalerBase, detecterDisposition, type DispositionClavier } from '../musique/clavier'
 import type { NoteMusicale } from '../projet/modele'
@@ -50,6 +50,10 @@ interface EtatStudio {
   definirNombreDePas(pas: number): void
   changerSwing(swing: number): void
   definirNoteDefaut(canalId: string, hauteur: number): void
+  /** Règle une piste du mixer (0 = maître). */
+  modifierPiste(index: number, modifications: Partial<Omit<PisteMixage, 'index'>>): void
+  /** Envoie un canal vers une piste du mixer. */
+  routerCanal(canalId: string, piste: number): void
   /** Remplace les notes d'un canal dans le pattern actif (piano roll). */
   remplacerNotes(canalId: string, notes: NoteMusicale[]): void
   // ---- jeu en direct
@@ -255,6 +259,20 @@ export const useStudio = create<EtatStudio>()((set, get) => {
       appliquer(definirNoteDefaut(get().projet, canalId, hauteur))
     },
 
+    modifierPiste(index, modifications) {
+      appliquer(
+        produce(get().projet, (p) => {
+          const piste = p.mixage.find((m) => m.index === index)
+          if (piste) Object.assign(piste, modifications)
+        }),
+      )
+    },
+
+    routerCanal(canalId, piste) {
+      if (!get().projet.mixage.some((m) => m.index === piste)) return
+      appliquer(modifierCanal(get().projet, canalId, { pisteMixage: piste }))
+    },
+
     remplacerNotes(canalId, notes) {
       appliquer(
         produce(get().projet, (p) => {
@@ -326,12 +344,7 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     },
 
     changerVolumeMaitre(volume) {
-      const valeur = Math.min(1, Math.max(0, volume))
-      const projet = produce(get().projet, (p) => {
-        if (p.mixage[0]) p.mixage[0].volume = valeur
-      })
-      set({ projet })
-      synchroniser(projet)
+      get().modifierPiste(0, { volume: Math.min(1, Math.max(0, volume)) })
     },
   }
 })

@@ -7,6 +7,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useStudio } from '../../etat/studio'
 import { Attente } from '../panneaux/Attente'
 import { ChannelRack } from '../panneaux/ChannelRack'
+import { Mixer } from '../panneaux/Mixer'
 import { Navigateur } from '../panneaux/Navigateur'
 import { PianoRoll } from '../panneaux/PianoRoll'
 import { VueInstrument } from '../panneaux/VueInstrument'
@@ -44,7 +45,7 @@ const composants: Record<IdPanneau, React.FunctionComponent<IDockviewPanelProps>
   playlist: () => <Attente titre="Playlist" etape="6" description="Les patterns placés dans le temps pour former le morceau." />,
   pianoroll: () => <PianoRoll />,
   instrument: () => <VueInstrument />,
-  mixer: () => <Attente titre="Mixer" etape="5" description="Une tranche par piste : volume, panoramique, effets, vumètre." />,
+  mixer: () => <Mixer />,
 }
 
 function lireDisposition(): unknown {

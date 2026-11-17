@@ -4,10 +4,15 @@
 import { WorkletSynthesizer } from 'spessasynth_lib'
 import urlProcesseur from 'spessasynth_lib/dist/spessasynth_processor.min.js?url'
 import { attribuerCanauxMidi, type Projet } from '../projet/modele'
+import { Mixeur, type NiveauStereo } from './mixer'
 import type { Destination, Horloge } from './transport'
 
 const CC_VOLUME = 7
 const CC_PAN = 10
+const CC_REVERB = 91 // la réverbération est celle du mixer : celle du synthétiseur est coupée
+const CC_CHORUS = 93
+/** Le synthétiseur a 16 sorties séparées, une par canal MIDI (au-delà, elles se partagent). */
+const SORTIES_SEPAREES = 16
 const CC_COUPER_LE_SON = 120 // All Sound Off : coupe net
 
 export type Progression = (recus: number, total: number) => void
@@ -39,7 +44,7 @@ async function telecharger(url: string, progression?: Progression): Promise<Arra
 export class MoteurSon implements Destination, Horloge {
   readonly contexte: AudioContext
   readonly synth: WorkletSynthesizer
-  readonly #maitre: GainNode
+  readonly mixeur: Mixeur
   readonly #analyseur: AnalyserNode
   readonly #onde = new Float32Array(1024)
   /** Notes programmées dans le futur : [canal, instant]. Voir toutCouper(). */
@@ -49,12 +54,14 @@ export class MoteurSon implements Destination, Horloge {
   private constructor(contexte: AudioContext, synth: WorkletSynthesizer) {
     this.contexte = contexte
     this.synth = synth
-    this.#maitre = contexte.createGain()
+    // Chaque canal MIDI sort séparément vers sa tranche du mixer ; la sortie principale du
+    // synthétiseur (tous les canaux mélangés) n'est pas utilisée.
+    const sortie = contexte.createGain()
     this.#analyseur = contexte.createAnalyser()
     this.#analyseur.fftSize = 1024
-    synth.connect(this.#maitre)
-    this.#maitre.connect(this.#analyseur)
-    this.#maitre.connect(contexte.destination)
+    sortie.connect(this.#analyseur)
+    sortie.connect(contexte.destination)
+    this.mixeur = new Mixeur(contexte, synth, sortie)
   }
 
   static async creer(urlBanque: string, progression?: Progression): Promise<MoteurSon> {
@@ -79,11 +86,13 @@ export class MoteurSon implements Destination, Horloge {
     return this.contexte.currentTime
   }
 
-  /** Instruments, volumes et panoramiques de chaque canal, volume général. */
+  /** Instruments, volumes et panoramiques de chaque canal ; pistes et routage du mixer. */
   appliquerProjet(projet: Projet): void {
     const attribution = attribuerCanauxMidi(projet.canaux)
     const plusHaut = Math.max(-1, ...attribution.values())
     for (let i = this.synth.midiChannels.length; i <= plusHaut; i++) this.synth.addNewChannel()
+    const pistes = new Set(projet.mixage.map((p) => p.index))
+    const routage = new Map<number, number>()
     for (const canal of projet.canaux) {
       const midi = attribution.get(canal.id)
       if (midi === undefined) continue
@@ -91,8 +100,17 @@ export class MoteurSon implements Destination, Horloge {
       if (!canal.batterie) this.synth.programChange(midi, canal.programme)
       this.synth.controllerChange(midi, CC_VOLUME, Math.round(canal.volume * 127))
       this.synth.controllerChange(midi, CC_PAN, Math.round(((canal.pan + 1) / 2) * 127))
+      this.synth.controllerChange(midi, CC_REVERB, 0)
+      this.synth.controllerChange(midi, CC_CHORUS, 0)
+      routage.set(midi % SORTIES_SEPAREES, pistes.has(canal.pisteMixage) ? canal.pisteMixage : 0)
     }
-    this.#maitre.gain.setTargetAtTime(projet.mixage[0]?.volume ?? 0.8, this.contexte.currentTime, 0.01)
+    this.mixeur.configurer(projet.mixage)
+    this.mixeur.router(routage)
+  }
+
+  /** Crête stéréo d'une piste du mixer (0 = maître). */
+  niveauPiste(index: number): NiveauStereo {
+    return this.mixeur.niveau(index)
   }
 
   noteOn(canal: number, hauteur: number, velocite: number, temps?: number): void {

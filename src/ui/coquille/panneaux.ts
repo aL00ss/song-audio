@@ -68,7 +68,7 @@ export const TAILLES_DEFAUT: Partial<Record<IdPanneau, { width?: number; height?
   navigateur: { width: 230 },
   playlist: { height: 190 },
   pianoroll: { width: 420 },
-  instrument: { height: 170 },
+  instrument: { height: 270 }, // le mixer partage ce groupe : ses tranches tiennent en hauteur
 }
 
 export function dispositionParDefaut(api: ApiDock): void {

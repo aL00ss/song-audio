@@ -57,3 +57,26 @@ body {
   --dv-drag-over-background-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
   font-family: var(--font-sans);
 }
+
+/* Fader du mixer : curseur natif vertical, glissière de console. */
+.fader {
+  writing-mode: vertical-lr;
+  direction: rtl;
+  appearance: none;
+  background: linear-gradient(90deg, transparent 42%, #0d1013 42%, #0d1013 58%, transparent 58%);
+}
+.fader::-webkit-slider-thumb {
+  appearance: none;
+  width: 22px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid #000;
+  background: linear-gradient(#c9ced6, #8d949e 45%, #5d636c 55%, #a9afb8);
+}
+.fader::-moz-range-thumb {
+  width: 22px;
+  height: 12px;
+  border-radius: 2px;
+  border: 1px solid #000;
+  background: linear-gradient(#c9ced6, #8d949e 45%, #5d636c 55%, #a9afb8);
+}

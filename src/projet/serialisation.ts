@@ -117,12 +117,23 @@ export function deserialiser(json: string): Projet {
   const idsPatterns = new Set(patterns.map((p) => p.id))
   const mixage = tableau(o.mixage, 'projet.mixage').map((m, i) => {
     const piste = objet(m, `projet.mixage[${i}]`)
+    const chemin = `projet.mixage[${i}]`
+    const index = entier(piste.index, `${chemin}.index`, 0)
+    // égaliseur, solo et réverbération : absents des projets enregistrés avant le mixer
+    const eq = piste.eq === undefined ? { grave: 0, medium: 0, aigu: 0 } : objet(piste.eq, `${chemin}.eq`)
     return {
-      index: entier(piste.index, `projet.mixage[${i}].index`, 0),
-      nom: texte(piste.nom, `projet.mixage[${i}].nom`),
-      volume: nombre(piste.volume, `projet.mixage[${i}].volume`, 0, 1),
-      pan: nombre(piste.pan, `projet.mixage[${i}].pan`, -1, 1),
-      muet: booleen(piste.muet, `projet.mixage[${i}].muet`),
+      index,
+      nom: texte(piste.nom, `${chemin}.nom`),
+      volume: nombre(piste.volume, `${chemin}.volume`, 0, 1),
+      pan: nombre(piste.pan, `${chemin}.pan`, -1, 1),
+      muet: booleen(piste.muet, `${chemin}.muet`),
+      solo: piste.solo === undefined ? false : booleen(piste.solo, `${chemin}.solo`),
+      eq: {
+        grave: nombre(eq.grave, `${chemin}.eq.grave`, -24, 24),
+        medium: nombre(eq.medium, `${chemin}.eq.medium`, -24, 24),
+        aigu: nombre(eq.aigu, `${chemin}.eq.aigu`, -24, 24),
+      },
+      reverb: piste.reverb === undefined ? (index === 0 ? 0 : 0.18) : nombre(piste.reverb, `${chemin}.reverb`, 0, 1),
     }
   })
   return {

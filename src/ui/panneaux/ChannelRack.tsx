@@ -95,10 +95,10 @@ function Apercu({ notes, longueur, couleur, largeur }: { notes: readonly NoteMus
 
 const largeurGrille = (pas: number) => pas * 19 + Math.floor((pas - 1) / 4) * 4
 /** Largeur fixe de la zone de contrôles d'une ligne : la grille de vélocité s'aligne dessus. */
-const LARGEUR_CONTROLES = 'w-[410px]'
+const LARGEUR_CONTROLES = 'w-[426px]'
 
 function Ligne({ canal, voix, selectionne, pasCourant }: { canal: Canal; voix: number; selectionne: boolean; pasCourant: number }) {
-  const { projet, modifierCanal, selectionnerCanal, definirNoteDefaut } = useStudio()
+  const { projet, modifierCanal, selectionnerCanal, definirNoteDefaut, routerCanal } = useStudio()
   const pattern = patternActif(projet)
   const notes = pattern.notes[canal.id] ?? []
   const enPas = estEnModePas(notes, canal)
@@ -141,7 +141,17 @@ function Ligne({ canal, voix, selectionne, pasCourant }: { canal: Canal; voix: n
           texte={(v) => `${Math.round(v * 100)} %`}
           surChangement={(v) => modifierCanal(canal.id, { volume: v })}
         />
-        <span className="w-5 shrink-0 text-center font-mono text-discret" title="Piste de mixage">{canal.pisteMixage}</span>
+        <select
+          aria-label={`Piste de mixage de ${canal.nom}`}
+          title="Piste du mixer qui reçoit ce canal"
+          value={canal.pisteMixage}
+          onChange={(e) => routerCanal(canal.id, Number(e.target.value))}
+          className="h-5 w-9 shrink-0 appearance-none rounded border border-black/50 bg-[#1f242a] text-center font-mono text-[11px] text-discret"
+        >
+          {projet.mixage.map((m) => (
+            <option key={m.index} value={m.index}>{m.index === 0 ? 'M' : m.index}</option>
+          ))}
+        </select>
         <button
           type="button"
           data-testid="nom-canal"

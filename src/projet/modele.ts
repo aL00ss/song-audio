@@ -54,12 +54,31 @@ export interface ClipPlaylist {
   debut: number
 }
 
+export interface Egaliseur {
+  /** Gain de chaque bande, en dB (-12 à +12). */
+  grave: number
+  medium: number
+  aigu: number
+}
+
 export interface PisteMixage {
   index: number
   nom: string
+  /** Position du fader, 0 à 1 (0,8 = 0 dB). */
   volume: number
   pan: number
   muet: boolean
+  solo: boolean
+  eq: Egaliseur
+  /** Envoi vers la réverbération commune, 0 à 1. */
+  reverb: number
+}
+
+export const EQ_NEUTRE: Egaliseur = { grave: 0, medium: 0, aigu: 0 }
+export const REVERB_DEFAUT = 0.18
+
+export function creerPiste(index: number, nom: string): PisteMixage {
+  return { index, nom, volume: 0.8, pan: 0, muet: false, solo: false, eq: { ...EQ_NEUTRE }, reverb: index === 0 ? 0 : REVERB_DEFAUT }
 }
 
 export interface Projet {
@@ -102,7 +121,7 @@ export function creerProjet(nom = 'Nouveau projet'): Projet {
     patterns: [pattern],
     patternActif: pattern.id,
     playlist: [],
-    mixage: [{ index: 0, nom: 'Maître', volume: 0.8, pan: 0, muet: false }],
+    mixage: [creerPiste(0, 'Maître')],
   }
 }
 
@@ -126,7 +145,7 @@ export function ajouterCanal(projet: Projet, options: OptionsCanal = {}): { proj
   const suivant = produce(projet, (p) => {
     const index = p.mixage.length
     const nom = options.nom ?? (batterie ? 'Batterie' : nomInstrument(programme))
-    p.mixage.push({ index, nom, volume: 0.8, pan: 0, muet: false })
+    p.mixage.push(creerPiste(index, nom))
     p.canaux.push({
       id,
       nom,

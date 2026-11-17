@@ -86,7 +86,14 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   comme un kit), allumée pendant la lecture ; jeu au clavier de l'ordinateur (AZERTY ou QWERTY,
   ← → octave) ; enregistrement en direct dans le pattern. 57 tests unitaires, 32 tests
   navigateur.
-- [ ] Étape 5 — mixer
+- [x] **Étape 5 — mixer** : chaque canal MIDI sort séparément du synthétiseur (mesuré : sorties
+  isolées, volume du canal respecté) vers sa tranche : égaliseur 3 bandes, fader (loi
+  quadratique, 0,8 = 0 dB), panoramique, muet, solo, vumètre stéréo, envoi vers une réverbération
+  commune (réponse impulsionnelle générée) ; maître avec limiteur ; routage des canaux choisi dans
+  le Channel Rack ; réverbération et chorus du synthétiseur coupés. Limite : 16 sorties séparées
+  (au-delà, deux canaux partagent une tranche). 62 tests unitaires, 38 tests navigateur (mesures
+  du son de chaque piste).
+- [ ] Étape 6 — playlist
 
 ## Notes techniques vérifiées
 
