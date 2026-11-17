@@ -2,6 +2,8 @@
 
 [![Tests](https://github.com/aL00ss/song-audio/actions/workflows/tests.yml/badge.svg)](https://github.com/aL00ss/song-audio/actions/workflows/tests.yml)
 
+👉 **Essayer le studio : https://al00ss.github.io/song-audio/**
+
 Un studio de musique multi-instruments qui fonctionne dans le navigateur : plusieurs
 instruments jouent ensemble, et chacun a une vue (clavier, batterie, manche…) qui s'allume
 pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
@@ -36,6 +38,7 @@ npm install
 npm run dev        # http://localhost:5173
 npm test           # tests unitaires (Vitest)
 npm run test:e2e   # tests navigateur (Playwright, Chromium) ; RESEAU=1 pour le test BitMidi réel
+                   # URL_STUDIO=https://al00ss.github.io/song-audio/ pour tester le site publié
 npm run build
 ```
 

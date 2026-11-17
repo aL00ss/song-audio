@@ -10,6 +10,9 @@ dans [docs/PLAN.md](docs/PLAN.md) : le lire avant toute nouvelle étape.
 - `npm run test:e2e` : tests navigateur (Playwright, Chromium)
 - `npm run build` : vérification des types puis construction
 - `npm run lint` : oxlint
+- Le site est publié sur https://al00ss.github.io/song-audio/ par la CI (job `publication`,
+  construit avec `BASE_PUBLIC=/song-audio/`) quand les tests passent sur `main`. Sous Git Bash,
+  poser `MSYS_NO_PATHCONV=1` avant de passer un chemin commençant par `/` à une commande.
 
 ## Conventions
 

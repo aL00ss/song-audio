@@ -25,7 +25,7 @@ test.beforeEach(async ({ page }) => {
   erreurs.length = 0
   page.on('pageerror', (e) => erreurs.push(e.message))
   page.on('console', (m) => m.type() === 'error' && erreurs.push(m.text()))
-  await page.goto('/')
+  await page.goto('./')
   await expect(page.getByTestId('statut')).toHaveText('Prêt', { timeout: 30_000 })
   await page.getByTestId('nouveau-projet').click()
 })
