@@ -3,7 +3,6 @@
 
 import { WorkletSynthesizer } from 'spessasynth_lib'
 import urlProcesseur from 'spessasynth_lib/dist/spessasynth_processor.min.js?url'
-import { CANAL_BATTERIE } from '../musique/gm'
 import { attribuerCanauxMidi, type Projet } from '../projet/modele'
 import type { Destination, Horloge } from './transport'
 
@@ -88,7 +87,7 @@ export class MoteurSon implements Destination, Horloge {
     for (const canal of projet.canaux) {
       const midi = attribution.get(canal.id)
       if (midi === undefined) continue
-      this.synth.midiChannels[midi]?.setDrums(canal.batterie || midi === CANAL_BATTERIE)
+      this.synth.midiChannels[midi]?.setDrums(canal.batterie)
       if (!canal.batterie) this.synth.programChange(midi, canal.programme)
       this.synth.controllerChange(midi, CC_VOLUME, Math.round(canal.volume * 127))
       this.synth.controllerChange(midi, CC_PAN, Math.round(((canal.pan + 1) / 2) * 127))

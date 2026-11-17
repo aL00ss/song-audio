@@ -72,7 +72,14 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   comme projet multi-pistes puis joué, cinq morceaux du domaine public, démo, import par
   glisser-déposer, 128 instruments. 36 tests unitaires, 21 tests navigateur (dont un sur le vrai
   réseau, lancé avec `RESEAU=1`).
-- [ ] Étape 3 — Channel Rack et séquenceur pas à pas
+- [x] **Étape 3 — séquenceur pas à pas** : un pas est une note (double croche, hauteur par défaut du
+  canal), grille cliquable, au clavier, peinte au glisser, effacée au clic droit ; tête de
+  lecture ; édition en pleine lecture ; son de batterie par ligne (chaque batterie sur son propre
+  canal MIDI réglé en batterie) ; longueur de 1 à 512 pas ; swing global ; éditeur de vélocité
+  aligné sur les pas ; aperçu des notes pour les morceaux importés ; nouveau projet avec un kit de
+  quatre sons ; projets anciens relus (hauteur par défaut et swing ajoutés). 46 tests unitaires,
+  26 tests navigateur.
+- [ ] Étape 4 — piano roll et vue d'instrument
 
 ## Notes techniques vérifiées
 

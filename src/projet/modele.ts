@@ -34,6 +34,8 @@ export interface Canal {
   /** Piste du mixer qui reçoit ce canal (0 = maître). */
   pisteMixage: number
   couleur: string
+  /** Hauteur des pas du séquenceur : Do central, ou le son de batterie (36 grosse caisse…). */
+  noteDefaut: number
 }
 
 export interface Pattern {
@@ -65,6 +67,8 @@ export interface Projet {
   nom: string
   /** Noires par minute. */
   tempo: number
+  /** Swing global, de 0 à 1 (voir pas.ts). */
+  swing: number
   signature: Signature
   canaux: Canal[]
   patterns: Pattern[]
@@ -92,6 +96,7 @@ export function creerProjet(nom = 'Nouveau projet'): Projet {
     version: VERSION_PROJET,
     nom,
     tempo: 120,
+    swing: 0,
     signature: { ...SIGNATURE_DEFAUT },
     canaux: [],
     patterns: [pattern],
@@ -107,7 +112,11 @@ export interface OptionsCanal {
   batterie?: boolean
   volume?: number
   pan?: number
+  noteDefaut?: number
 }
+
+export const NOTE_DEFAUT_MELODIQUE = 60
+export const NOTE_DEFAUT_BATTERIE = 36
 
 /** Ajoute un canal et sa piste de mixage ; renvoie le projet et l'identifiant du canal. */
 export function ajouterCanal(projet: Projet, options: OptionsCanal = {}): { projet: Projet; id: string } {
@@ -129,6 +138,7 @@ export function ajouterCanal(projet: Projet, options: OptionsCanal = {}): { proj
       solo: false,
       pisteMixage: index,
       couleur: COULEURS[p.canaux.length % COULEURS.length],
+      noteDefaut: options.noteDefaut ?? (batterie ? NOTE_DEFAUT_BATTERIE : NOTE_DEFAUT_MELODIQUE),
     })
   })
   return { projet: suivant, id }
@@ -155,14 +165,17 @@ export function canauxAudibles(canaux: readonly Canal[]): Set<string> {
 }
 
 /**
- * Canal MIDI de chaque canal du projet : la batterie sur le canal 10 (indice 9), les autres
- * instruments sur 0, 1, 2… en sautant le 9. Au-delà de 16, le synthétiseur ajoute des canaux.
+ * Canal MIDI de chaque canal du projet. La première batterie va sur le canal 10 (indice 9),
+ * comme le veut General MIDI ; chaque autre canal, batterie comprise, a son propre canal MIDI
+ * (0, 1, 2… en sautant le 9), pour garder un volume et un panoramique indépendants. Le moteur
+ * règle chaque canal MIDI en batterie ou non. Au-delà de 16, le synthétiseur ajoute des canaux.
  */
 export function attribuerCanauxMidi(canaux: readonly Canal[]): Map<string, number> {
   const attribution = new Map<string, number>()
+  const premiereBatterie = canaux.find((c) => c.batterie)
   let suivant = 0
   for (const canal of canaux) {
-    if (canal.batterie) {
+    if (canal === premiereBatterie) {
       attribution.set(canal.id, CANAL_BATTERIE)
       continue
     }

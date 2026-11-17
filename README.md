@@ -7,12 +7,14 @@ instruments jouent ensemble, et chacun a une vue (clavier, batterie, manche…) 
 pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
 [docs/PLAN.md](docs/PLAN.md).
 
-**Avancement : étapes 0 (fondations), 1 (coquille du studio) et 2 (navigateur) terminées.**
+**Avancement : étapes 0 à 3 terminées (fondations, coquille du studio, navigateur, séquenceur pas à pas).**
 
 - Interface de studio : barre de transport, panneaux ancrables (navigateur, Channel Rack,
   playlist, piano roll, instrument, mixer), raccourcis F5 à F9 et Espace, disposition gardée
 - Navigateur : recherche de fichiers MIDI en ligne (BitMidi), morceaux de démonstration,
   import par glisser-déposer, 128 instruments General MIDI
+- Séquenceur pas à pas dans le Channel Rack : pas peints à la souris, vélocité par pas, swing,
+  longueur de 1 à 512 pas, un son de batterie par ligne
 
 - Modèle de projet (canaux, patterns, playlist, mixage), sauvegarde JSON vérifiée
 - Import de fichiers MIDI multi-pistes : chaque piste garde son instrument General MIDI,

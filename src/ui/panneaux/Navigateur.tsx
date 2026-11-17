@@ -98,7 +98,7 @@ function RechercheEnLigne() {
 }
 
 function Morceaux() {
-  const { chargerMidiDepuisUrl, chargerDemo, morceauEnChargement } = useStudio()
+  const { chargerMidiDepuisUrl, chargerDemo, nouveauProjet, morceauEnChargement } = useStudio()
   const [morceaux, setMorceaux] = useState<FicheMorceau[]>([])
   useEffect(() => {
     fetch(`${BASE}morceaux/catalogue.json`)
@@ -109,6 +109,9 @@ function Morceaux() {
   return (
     <section aria-label="Morceaux">
       <h3 className={titreSection}>Morceaux</h3>
+      <button type="button" data-testid="nouveau-projet" onClick={nouveauProjet} title="Projet vide avec un kit de batterie" className={ligne}>
+        <span aria-hidden className="text-accent">＋</span> Nouveau projet
+      </button>
       <button type="button" data-testid="charger-demo" onClick={chargerDemo} className={ligne}>
         <span aria-hidden className="text-accent">▸</span> Démo (4 instruments)
       </button>
@@ -181,7 +184,7 @@ function Instruments() {
   return (
     <section aria-label="Instruments" className="min-h-0">
       <h3 className={titreSection}>Instruments</h3>
-      <button type="button" onClick={() => ajouterInstrument(0, true)} title="Ajouter une batterie (canal 10)" className={ligne}>
+      <button type="button" onClick={() => ajouterInstrument(0, true)} title="Ajouter une ligne de batterie (un son, en pas à pas)" className={ligne}>
         ＋ Batterie
       </button>
       {FAMILLES.map((famille) => (

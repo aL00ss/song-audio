@@ -9,7 +9,8 @@ import { MoteurSon } from '../audio/moteur'
 import { type EtatTransport, Transport } from '../audio/transport'
 import { creerDemo } from '../projet/demo'
 import { depuisMidi } from '../projet/importMidi'
-import { ajouterCanal, attribuerCanauxMidi, type Canal, modifierCanal, type Projet } from '../projet/modele'
+import { ajouterCanal, attribuerCanauxMidi, type Canal, creerProjet, modifierCanal, type Projet } from '../projet/modele'
+import { definirNombreDePas, definirNoteDefaut, definirPas, definirVelocitePas } from '../projet/pas'
 
 export const URL_BANQUE = `${import.meta.env.BASE_URL}soundfonts/GeneralUserGS.sf3`
 
@@ -40,6 +41,22 @@ interface EtatStudio {
   selectionnerCanal(id: string): void
   ajouterInstrument(programme: number, batterie?: boolean): void
   changerVolumeMaitre(volume: number): void
+  nouveauProjet(): void
+  /** Active, désactive (actif donné) ou bascule un pas du séquenceur. */
+  definirPas(canalId: string, index: number, actif?: boolean): void
+  definirVelocitePas(canalId: string, index: number, velocite: number): void
+  definirNombreDePas(pas: number): void
+  changerSwing(swing: number): void
+  definirNoteDefaut(canalId: string, hauteur: number): void
+}
+
+/** Projet vide : un kit de batterie de quatre sons, un pattern d'une mesure (16 pas). */
+export function projetVide(): Projet {
+  let projet = creerProjet('Nouveau projet')
+  for (const [nom, note] of [['Grosse caisse', 36], ['Clap', 39], ['Charleston', 42], ['Caisse claire', 38]] as const) {
+    projet = ajouterCanal(projet, { batterie: true, nom, noteDefaut: note }).projet
+  }
+  return projet
 }
 
 let moteur: MoteurSon | null = null
@@ -72,6 +89,13 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     }
     get().remplacerProjet(projet)
     return true
+  }
+
+  /** Enregistre une modification du projet et la transmet au son (même en pleine lecture). */
+  const appliquer = (projet: Projet) => {
+    if (projet === get().projet) return
+    set({ projet })
+    synchroniser(projet)
   }
 
   const demo = creerDemo()
@@ -175,6 +199,30 @@ export const useStudio = create<EtatStudio>()((set, get) => {
       } catch (erreur) {
         set({ message: erreur instanceof Error ? erreur.message : String(erreur) })
       }
+    },
+
+    nouveauProjet() {
+      get().remplacerProjet(projetVide())
+    },
+
+    definirPas(canalId, index, actif) {
+      appliquer(definirPas(get().projet, canalId, index, actif))
+    },
+
+    definirVelocitePas(canalId, index, velocite) {
+      appliquer(definirVelocitePas(get().projet, canalId, index, velocite))
+    },
+
+    definirNombreDePas(pas) {
+      appliquer(definirNombreDePas(get().projet, pas))
+    },
+
+    changerSwing(swing) {
+      appliquer({ ...get().projet, swing: Math.min(1, Math.max(0, swing)) })
+    },
+
+    definirNoteDefaut(canalId, hauteur) {
+      appliquer(definirNoteDefaut(get().projet, canalId, hauteur))
     },
 
     changerVolumeMaitre(volume) {

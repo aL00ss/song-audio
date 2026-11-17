@@ -74,6 +74,8 @@ function lireCanal(v: unknown, chemin: string): Canal {
     solo: booleen(o.solo, `${chemin}.solo`),
     pisteMixage: entier(o.pisteMixage, `${chemin}.pisteMixage`, 0),
     couleur: texte(o.couleur, `${chemin}.couleur`),
+    // absent des projets enregistrés avant le séquenceur pas à pas
+    noteDefaut: o.noteDefaut === undefined ? (o.batterie === true ? 36 : 60) : entier(o.noteDefaut, `${chemin}.noteDefaut`, 0, 127),
   }
 }
 
@@ -127,6 +129,7 @@ export function deserialiser(json: string): Projet {
     version: VERSION_PROJET,
     nom: texte(o.nom, 'projet.nom'),
     tempo: nombre(o.tempo, 'projet.tempo', 10, 999),
+    swing: o.swing === undefined ? 0 : nombre(o.swing, 'projet.swing', 0, 1),
     signature: {
       numerateur: entier(signature.numerateur, 'projet.signature.numerateur', 1, 32),
       denominateur: entier(signature.denominateur, 'projet.signature.denominateur', 1, 32),

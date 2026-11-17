@@ -4,6 +4,7 @@
 // injectées, ce qui permet de le tester entièrement hors navigateur.
 
 import { attribuerCanauxMidi, canauxAudibles, type Pattern, type Projet } from '../projet/modele'
+import { decalageSwing } from '../projet/pas'
 import { secondesEnTics, ticsEnSecondes } from '../musique/temps'
 
 export interface Destination {
@@ -42,7 +43,7 @@ export const DELAI_DEPART = 0.05
 /**
  * Événements note-on / note-off d'un pattern, triés par tic (à tic égal, les relâchements
  * d'abord). Les canaux muets (ou hors solo) sont ignorés ; les notes qui dépassent la fin du
- * pattern sont coupées à la fin.
+ * pattern sont coupées à la fin ; le swing retarde les notes des pas impairs.
  */
 export function evenementsDuPattern(projet: Projet, pattern: Pattern): Evenement[] {
   const canauxMidi = attribuerCanauxMidi(projet.canaux)
@@ -54,8 +55,11 @@ export function evenementsDuPattern(projet: Projet, pattern: Pattern): Evenement
     if (midi === undefined) continue
     for (const note of pattern.notes[canal.id] ?? []) {
       if (note.tic >= pattern.longueur) continue
-      const fin = Math.min(note.tic + note.duree, pattern.longueur)
-      evenements.push({ tic: note.tic, allume: true, canal: midi, hauteur: note.hauteur, velocite: note.velocite })
+      const decalage = decalageSwing(note.tic, projet.swing ?? 0)
+      const debut = note.tic + decalage
+      const fin = Math.min(note.tic + note.duree + decalage, pattern.longueur)
+      if (debut >= fin) continue
+      evenements.push({ tic: debut, allume: true, canal: midi, hauteur: note.hauteur, velocite: note.velocite })
       evenements.push({ tic: fin, allume: false, canal: midi, hauteur: note.hauteur, velocite: 0 })
     }
   }
