@@ -51,7 +51,15 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
 | 6 | Playlist | Clips de patterns, déplacement, boucle, zoom, mode Pat/Song | Tests d'arrangement |
 | 7 | Vues avancées | Guitare et basse (doigté par programmation dynamique), cordes frottées, cuivres et vents | Aucun accord injouable, écart ≤ 4 cases |
 | 8 | Jouer avec l'orchestre, export | Couper une piste pour la jouer soi-même, export WAV et MIDI | Tests d'export |
-| 9 | Finitions | Performance avec 16 instruments, mobile (un panneau à la fois), tests de chaque panneau | Suite navigateur complète |
+| 9 | Finitions et sons améliorés (web) | Performance avec 16 instruments, mobile (un panneau à la fois), tests de chaque panneau ; sons améliorés mais légers, chargés à la demande : piano Salamander allégé (4–5 couches de vélocité, ≈ 20–30 Mo), sections d'orchestre tirées de VSCO 2 CE (CC0) converties en SF3 ; mentions obligatoires (Alexander Holm, Versilian Studios) | Suite navigateur complète |
+| 10 | Version de bureau (Tauri) | Même interface React dans une application Tauri ; moteur sonore en Rust qui lit depuis le disque la meilleure banque gratuite possible, même au-delà de 5 Go (Salamander Grand Piano complet, VSCO 2 CE, Virtual Playing Orchestra… — surtout au format SFZ : lecteur à choisir, par exemple sfizz) ; le site web reste disponible avec les banques légères | Tests de l'application de bureau |
+
+## Décisions (2026-11-17)
+
+- Le site web garde des banques légères (GeneralUser GS + piano allégé + sections VSCO 2 à la
+  demande) : chaque visiteur les télécharge, et GitHub refuse les fichiers de plus de 100 Mo.
+- La qualité maximale (banques gratuites de plusieurs Go) est réservée à la version de bureau
+  Tauri de l'étape 10, qui lit les sons depuis le disque.
 
 ## Avancement
 
