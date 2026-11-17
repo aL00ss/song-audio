@@ -5,7 +5,6 @@ import { audio, useStudio } from '../../etat/studio'
 import { formaterPosition, formaterSecondes, ticsEnSecondes } from '../../musique/temps'
 import { BoutonRotatif } from '../commun/BoutonRotatif'
 import { useImage } from '../commun/useImage'
-import { type IdPanneau, PANNEAUX } from './panneaux'
 
 const bouton = 'h-7 rounded border border-bord bg-panneau-2 px-2.5 hover:border-discret disabled:opacity-40'
 
@@ -21,10 +20,7 @@ function Afficheur({ testId, titre, children }: { testId: string; titre: string;
   )
 }
 
-export function BarreTransport({ ouvrirPanneau, panneauxOuverts }: {
-  ouvrirPanneau: (id: IdPanneau) => void
-  panneauxOuverts: ReadonlySet<string>
-}) {
+export function BarreTransport() {
   const {
     transport, chargement, projet, enregistrement, mode, basculerEnregistrement, basculerLecture, arreter, changerTempo,
     changerVolumeMaitre, changerMode, choisirPattern, nouveauPattern, dupliquerPattern,
@@ -130,23 +126,8 @@ export function BarreTransport({ ouvrirPanneau, panneauxOuverts }: {
         />
       </span>
 
-      <nav aria-label="Panneaux" className="ml-auto flex flex-wrap items-center gap-1">
-        {PANNEAUX.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            data-testid={`ouvrir-${p.id}`}
-            aria-pressed={panneauxOuverts.has(p.id)}
-            title={p.raccourci ? `${p.titre} (${p.raccourci})` : p.titre}
-            onClick={() => ouvrirPanneau(p.id)}
-            className="h-6 rounded px-2 text-discret hover:bg-panneau-2 hover:text-texte aria-pressed:text-texte"
-          >
-            {p.titre}
-          </button>
-        ))}
-      </nav>
 
-      <span data-testid="statut" className="w-full text-right text-discret sm:w-auto">{statut}</span>
+      <span data-testid="statut" className="ml-auto text-discret">{statut}</span>
     </header>
   )
 }

@@ -1,5 +1,5 @@
 // Étape 3 : le séquenceur pas à pas du Channel Rack.
-import { expect, type Page, test } from '@playwright/test'
+import { expect, type Locator, type Page, test } from '@playwright/test'
 
 const erreurs: string[] = []
 const etat = (page: Page) => page.evaluate(() => (window as any).__studio.etat())
@@ -7,6 +7,12 @@ const ligne = (page: Page, nom: string) => page.getByTestId('canal').filter({ ha
 const pas = (page: Page, nom: string, n: number) => page.getByRole('button', { name: `Pas ${n} ${nom}`, exact: true })
 const actifs = (page: Page, nom: string) =>
   ligne(page, nom).locator('[data-pas][aria-pressed="true"]').evaluateAll((els) => els.map((e) => Number(e.getAttribute('data-pas')) + 1))
+
+/** Boîte d'un élément après l'avoir fait défiler dans la vue (le rack peut être petit). */
+async function boite(loc: Locator) {
+  await loc.scrollIntoViewIfNeeded()
+  return (await loc.boundingBox())!
+}
 
 /** Voix maximales sur le canal MIDI d'un canal du projet pendant `ms`. */
 async function voixMax(page: Page, nom: string, ms: number): Promise<number> {
@@ -55,19 +61,19 @@ test('clic, clavier, peinture et clic droit', async ({ page }) => {
   expect(await actifs(page, 'Grosse caisse')).toEqual([1, 3, 9, 13])
 
   // peinture : glisser du pas 1 au pas 8 du charleston
-  const debut = await pas(page, 'Charleston', 1).boundingBox()
-  const fin = await pas(page, 'Charleston', 8).boundingBox()
-  await page.mouse.move(debut!.x + 5, debut!.y + 5)
+  const debut = await boite(pas(page, 'Charleston', 1))
+  const fin = await boite(pas(page, 'Charleston', 8))
+  await page.mouse.move(debut.x + 5, debut.y + 5)
   await page.mouse.down()
-  await page.mouse.move(fin!.x + 5, fin!.y + 5, { steps: 12 })
+  await page.mouse.move(fin.x + 5, fin.y + 5, { steps: 12 })
   await page.mouse.up()
   expect(await actifs(page, 'Charleston')).toEqual([1, 2, 3, 4, 5, 6, 7, 8])
   // clic droit glissé : efface
-  const a = await pas(page, 'Charleston', 3).boundingBox()
-  const b = await pas(page, 'Charleston', 5).boundingBox()
-  await page.mouse.move(a!.x + 5, a!.y + 5)
+  const a = await boite(pas(page, 'Charleston', 3))
+  const b = await boite(pas(page, 'Charleston', 5))
+  await page.mouse.move(a.x + 5, a.y + 5)
   await page.mouse.down({ button: 'right' })
-  await page.mouse.move(b!.x + 5, b!.y + 5, { steps: 8 })
+  await page.mouse.move(b.x + 5, b.y + 5, { steps: 8 })
   await page.mouse.up({ button: 'right' })
   expect(await actifs(page, 'Charleston')).toEqual([1, 2, 6, 7, 8])
 
@@ -125,8 +131,8 @@ test('éditeur de vélocité du canal sélectionné', async ({ page }) => {
   await curseur.press('ArrowDown')
   await expect(curseur).toHaveAttribute('aria-valuenow', '92')
   // glisser en haut de la colonne : vélocité maximale
-  const cadre = await curseur.boundingBox()
-  await page.mouse.move(cadre!.x + 5, cadre!.y + 1)
+  const cadre = await boite(curseur)
+  await page.mouse.move(cadre.x + 5, cadre.y + 1)
   await page.mouse.down()
   await page.mouse.up()
   await expect(curseur).toHaveAttribute('aria-valuenow', /^12[0-7]$/)
@@ -138,4 +144,18 @@ test('un morceau importé s’affiche en aperçu, pas en pas', async ({ page }) 
   await expect(page.getByTestId('canal')).toHaveCount(4)
   await expect(page.getByTestId('canal').first()).toHaveAttribute('data-mode', 'apercu')
   await expect(page.getByTestId('apercu')).toHaveCount(4)
+})
+
+test('en 1280 × 720 : barre du haut sur une ligne, les quatre lignes du kit visibles dans le rack', async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await page.getByTestId('reinitialiser-disposition').click()
+  const barre = (await page.locator('header').first().boundingBox())!
+  expect(barre.height, 'hauteur de la barre du haut').toBeLessThan(56)
+  const rack = (await page.locator('.dv-tab', { hasText: /^Channel Rack$/ }).boundingBox())!
+  const mixer = (await page.locator('.dv-tab', { hasText: /^Mixer$/ }).boundingBox())!
+  for (const nom of ['Grosse caisse', 'Clap', 'Charleston', 'Caisse claire']) {
+    const ligneBoite = (await ligne(page, nom).boundingBox())!
+    expect(ligneBoite.y, nom).toBeGreaterThan(rack.y)
+    expect(ligneBoite.y + ligneBoite.height, nom).toBeLessThan(mixer.y)
+  }
 })

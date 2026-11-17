@@ -12,6 +12,7 @@ import { PianoRoll } from '../panneaux/PianoRoll'
 import { Playlist } from '../panneaux/Playlist'
 import { VueInstrument } from '../panneaux/VueInstrument'
 import { BarreTransport } from './BarreTransport'
+import { NavigationPanneaux } from './NavigationPanneaux'
 import { type ApiDock, basculerPanneau, CLE_DISPOSITION, dispositionParDefaut, type IdPanneau, ouvrirPanneau } from './panneaux'
 import { noteDuCode } from '../../musique/clavier'
 import { actionPourTouche, toucheDepuisEvenement } from './raccourcis'
@@ -145,7 +146,7 @@ export function Studio() {
 
   return (
     <div className="flex h-full flex-col">
-      <BarreTransport ouvrirPanneau={ouvrir} panneauxOuverts={ouverts} />
+      <BarreTransport />
       {message && (
         <p role="alert" data-testid="message" className="border-b border-black/50 bg-accent/15 px-3 py-1 text-accent">
           {message}
@@ -155,10 +156,13 @@ export function Studio() {
         <DockviewReact components={composants} onReady={surPret} theme={theme} messages={messages} />
       </main>
       <footer className="flex items-center justify-between gap-2 border-t border-black/50 bg-panneau px-2 py-0.5 text-[11px] text-discret">
-        <span>Espace : lecture/pause · Maj+Espace : arrêt · F5 Playlist · F6 Rack · F7 Piano roll · F8 Navigateur · F9 Mixer</span>
-        <button type="button" data-testid="reinitialiser-disposition" onClick={reinitialiser} className="underline underline-offset-2 hover:text-texte">
-          Disposition par défaut
-        </button>
+        <span className="truncate">Espace : lecture/pause · Maj+Espace : arrêt · F5 à F9 : panneaux · lettres : jouer</span>
+        <span className="flex items-center gap-2">
+          <NavigationPanneaux ouvrirPanneau={ouvrir} panneauxOuverts={ouverts} />
+          <button type="button" data-testid="reinitialiser-disposition" onClick={reinitialiser} className="underline underline-offset-2 hover:text-texte">
+            Disposition par défaut
+          </button>
+        </span>
       </footer>
     </div>
   )

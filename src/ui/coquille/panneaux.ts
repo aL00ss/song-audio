@@ -66,9 +66,9 @@ function ajouter(api: ApiDock, id: IdPanneau, reference?: IdPanneau, direction?:
 /** Tailles de départ (px) : navigateur étroit, rack haut, playlist et instrument plus bas. */
 export const TAILLES_DEFAUT: Partial<Record<IdPanneau, { width?: number; height?: number }>> = {
   navigateur: { width: 230 },
-  playlist: { height: 190 },
+  playlist: { height: 150 },
   pianoroll: { width: 420 },
-  instrument: { height: 270 }, // le mixer partage ce groupe : ses tranches tiennent en hauteur
+  instrument: { height: 250 }, // le mixer partage ce groupe ; le rack garde la hauteur restante
 }
 
 export function dispositionParDefaut(api: ApiDock): void {
