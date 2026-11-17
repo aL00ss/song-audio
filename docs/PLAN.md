@@ -79,7 +79,14 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   aligné sur les pas ; aperçu des notes pour les morceaux importés ; nouveau projet avec un kit de
   quatre sons ; projets anciens relus (hauteur par défaut et swing ajoutés). 46 tests unitaires,
   26 tests navigateur.
-- [ ] Étape 4 — piano roll et vue d'instrument
+- [x] **Étape 4 — piano roll et vue d'instrument** : piano roll en Canvas (ajout aimanté, déplacement,
+  redimensionnement, effacement au clic droit, lasso, Suppr, Ctrl+A, flèches, quantification,
+  couloir de vélocité, molette et zoom, tête de lecture, écoute au clavier vertical) ; vue
+  d'instrument (clavier 88 touches jouable à la souris en glissando, pads de batterie disposés
+  comme un kit), allumée pendant la lecture ; jeu au clavier de l'ordinateur (AZERTY ou QWERTY,
+  ← → octave) ; enregistrement en direct dans le pattern. 57 tests unitaires, 32 tests
+  navigateur.
+- [ ] Étape 5 — mixer
 
 ## Notes techniques vérifiées
 

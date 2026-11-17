@@ -106,7 +106,18 @@ describe('raccourcis', () => {
     expect(actionPourTouche(touche('Space', { cible: { balise: 'INPUT', type: 'text' } }))).toBeNull()
     expect(actionPourTouche(touche('Space', { cible: { balise: 'DIV', editable: true } }))).toBeNull()
     expect(actionPourTouche(touche('Space', { ctrlKey: true }))).toBeNull()
-    expect(actionPourTouche(touche('KeyA'))).toBeNull()
+  })
+
+  it('les rangées du clavier jouent des notes, les flèches changent d’octave', () => {
+    expect(actionPourTouche(touche('KeyQ'))).toEqual({ type: 'note', code: 'KeyQ' })
+    expect(actionPourTouche(touche('Digit2'))).toEqual({ type: 'note', code: 'Digit2' })
+    expect(actionPourTouche(touche('KeyA'))).toBeNull() // pas sur les rangées de notes
+    expect(actionPourTouche(touche('KeyQ', { cible: { balise: 'INPUT', type: 'search' } }))).toBeNull()
+    expect(actionPourTouche(touche('KeyQ', { ctrlKey: true }))).toBeNull()
+    expect(actionPourTouche(touche('ArrowLeft'))).toEqual({ type: 'octave', sens: -1 })
+    expect(actionPourTouche(touche('ArrowRight'))).toEqual({ type: 'octave', sens: 1 })
+    expect(actionPourTouche(touche('ArrowRight', { cible: { balise: 'INPUT', type: 'range' } }))).toBeNull()
+    expect(actionPourTouche(touche('ArrowRight', { cible: { balise: 'DIV', role: 'slider' } }))).toBeNull()
   })
 
   it('reconnaît les champs de saisie', () => {

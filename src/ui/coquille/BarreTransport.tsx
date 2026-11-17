@@ -25,7 +25,7 @@ export function BarreTransport({ ouvrirPanneau, panneauxOuverts }: {
   ouvrirPanneau: (id: IdPanneau) => void
   panneauxOuverts: ReadonlySet<string>
 }) {
-  const { transport, chargement, projet, basculerLecture, arreter, changerTempo, changerVolumeMaitre } = useStudio()
+  const { transport, chargement, projet, enregistrement, basculerEnregistrement, basculerLecture, arreter, changerTempo, changerVolumeMaitre } = useStudio()
   const position = useImage(() => audio.transport?.position ?? 0)
   const pret = chargement.phase === 'pret'
   const statut =
@@ -54,6 +54,16 @@ export function BarreTransport({ ouvrirPanneau, panneauxOuverts }: {
         </button>
         <button type="button" data-testid="stop" disabled={!pret} onClick={arreter} title="Arrêt (Maj+Espace)" className={bouton}>
           Stop
+        </button>
+        <button
+          type="button"
+          data-testid="enregistrer"
+          aria-pressed={enregistrement}
+          onClick={basculerEnregistrement}
+          title="Enregistrement : les notes jouées pendant la lecture s'écrivent dans le pattern"
+          className={`${bouton} aria-pressed:border-red-500 aria-pressed:bg-red-600/80 aria-pressed:text-white`}
+        >
+          <span aria-hidden className="mr-1 text-red-400 in-aria-pressed:text-white">●</span>Rec
         </button>
         <span className="ml-1 inline-flex overflow-hidden rounded border border-bord" role="group" aria-label="Mode de lecture">
           <span className="bg-accent/90 px-2 py-1 font-semibold text-black" title="Lecture du pattern en boucle">PAT</span>

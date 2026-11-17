@@ -8,8 +8,11 @@ import { useStudio } from '../../etat/studio'
 import { Attente } from '../panneaux/Attente'
 import { ChannelRack } from '../panneaux/ChannelRack'
 import { Navigateur } from '../panneaux/Navigateur'
+import { PianoRoll } from '../panneaux/PianoRoll'
+import { VueInstrument } from '../panneaux/VueInstrument'
 import { BarreTransport } from './BarreTransport'
 import { type ApiDock, basculerPanneau, CLE_DISPOSITION, dispositionParDefaut, type IdPanneau, ouvrirPanneau } from './panneaux'
+import { noteDuCode } from '../../musique/clavier'
 import { actionPourTouche, toucheDepuisEvenement } from './raccourcis'
 
 const theme: DockviewTheme = { name: 'studio', className: 'dockview-theme-dark theme-studio', colorScheme: 'dark' }
@@ -39,8 +42,8 @@ const composants: Record<IdPanneau, React.FunctionComponent<IDockviewPanelProps>
   navigateur: () => <Navigateur />,
   rack: () => <ChannelRack />,
   playlist: () => <Attente titre="Playlist" etape="6" description="Les patterns placés dans le temps pour former le morceau." />,
-  pianoroll: () => <Attente titre="Piano roll" etape="4" description="L'éditeur de notes de l'instrument sélectionné." />,
-  instrument: () => <Attente titre="Vue de l'instrument" etape="4" description="Clavier, batterie, manche… qui s'allume pendant la lecture et se joue." />,
+  pianoroll: () => <PianoRoll />,
+  instrument: () => <VueInstrument />,
   mixer: () => <Attente titre="Mixer" etape="5" description="Une tranche par piste : volume, panoramique, effets, vumètre." />,
 }
 
@@ -62,7 +65,7 @@ function ecrireDisposition(api: DockviewApi): void {
 }
 
 export function Studio() {
-  const { message, basculerLecture, arreter } = useStudio()
+  const { message, basculerLecture, arreter, changerOctave, jouerNote, relacherNote, relacherTout } = useStudio()
   const apiRef = useRef<DockviewApi | null>(null)
   const [ouverts, setOuverts] = useState<ReadonlySet<string>>(new Set())
 
@@ -97,6 +100,8 @@ export function Studio() {
   }, [])
 
   useEffect(() => {
+    /** Touches de note enfoncées : code physique -> note et canal joués (pour les relâcher). */
+    const notesTenues = new Map<string, { hauteur: number; canal: string }>()
     const surTouche = (e: KeyboardEvent) => {
       const action = actionPourTouche(toucheDepuisEvenement(e))
       if (!action) return
@@ -104,18 +109,38 @@ export function Studio() {
       if (action.type === 'panneau' && apiRef.current) basculerPanneau(apiRef.current as unknown as ApiDock, action.id)
       else if (action.type === 'lecture') void basculerLecture()
       else if (action.type === 'stop') arreter()
+      else if (action.type === 'octave') changerOctave(action.sens)
+      else if (action.type === 'note' && !e.repeat && !notesTenues.has(action.code)) {
+        const { clavier, canalSelectionne } = useStudio.getState()
+        const hauteur = noteDuCode(action.code, clavier.base)
+        if (hauteur === null || !canalSelectionne) return
+        notesTenues.set(action.code, { hauteur, canal: canalSelectionne })
+        jouerNote(hauteur, 96, canalSelectionne)
+      }
     }
-    // Espace relâché sur un bouton le cliquerait : on l'empêche aussi au relâchement.
     const surRelache = (e: KeyboardEvent) => {
+      // Espace relâché sur un bouton le cliquerait : on l'empêche aussi au relâchement.
       if (e.code === 'Space' && actionPourTouche(toucheDepuisEvenement(e))) e.preventDefault()
+      const tenue = notesTenues.get(e.code)
+      if (tenue) {
+        notesTenues.delete(e.code)
+        relacherNote(tenue.hauteur, tenue.canal)
+      }
+    }
+    // fenêtre quittée touche enfoncée : aucune note ne doit rester bloquée
+    const surPerteFocus = () => {
+      notesTenues.clear()
+      relacherTout()
     }
     window.addEventListener('keydown', surTouche)
     window.addEventListener('keyup', surRelache)
+    window.addEventListener('blur', surPerteFocus)
     return () => {
       window.removeEventListener('keydown', surTouche)
       window.removeEventListener('keyup', surRelache)
+      window.removeEventListener('blur', surPerteFocus)
     }
-  }, [basculerLecture, arreter])
+  }, [basculerLecture, arreter, changerOctave, jouerNote, relacherNote, relacherTout])
 
   return (
     <div className="flex h-full flex-col">

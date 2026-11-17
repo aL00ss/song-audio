@@ -11,6 +11,8 @@ import { creerDemo } from '../projet/demo'
 import { depuisMidi } from '../projet/importMidi'
 import { ajouterCanal, attribuerCanauxMidi, type Canal, creerProjet, modifierCanal, type Projet } from '../projet/modele'
 import { definirNombreDePas, definirNoteDefaut, definirPas, definirVelocitePas } from '../projet/pas'
+import { BASE_DEFAUT, decalerBase, detecterDisposition, type DispositionClavier } from '../musique/clavier'
+import type { NoteMusicale } from '../projet/modele'
 
 export const URL_BANQUE = `${import.meta.env.BASE_URL}soundfonts/GeneralUserGS.sf3`
 
@@ -48,6 +50,32 @@ interface EtatStudio {
   definirNombreDePas(pas: number): void
   changerSwing(swing: number): void
   definirNoteDefaut(canalId: string, hauteur: number): void
+  /** Remplace les notes d'un canal dans le pattern actif (piano roll). */
+  remplacerNotes(canalId: string, notes: NoteMusicale[]): void
+  // ---- jeu en direct
+  /** Enregistre les notes jouées pendant la lecture dans le pattern. */
+  enregistrement: boolean
+  basculerEnregistrement(): void
+  clavier: { base: number; disposition: DispositionClavier }
+  changerOctave(sens: number): void
+  changerDisposition(disposition?: DispositionClavier): void
+  /** Joue une note sur un canal (le canal sélectionné par défaut). */
+  jouerNote(hauteur: number, velocite?: number, canalId?: string): void
+  relacherNote(hauteur: number, canalId?: string): void
+  relacherTout(): void
+}
+
+/** Notes tenues en direct : « canal:hauteur » -> nombre d'appuis, instant de début (tic absolu), vélocité. */
+const tenues = new Map<string, { appuis: number; debut: number | null; velocite: number }>()
+
+/** Hauteurs jouées en direct sur un canal du projet (pour les vues d'instrument). */
+export function notesEnDirect(canalId: string): Set<number> {
+  const resultat = new Set<number>()
+  for (const cle of tenues.keys()) {
+    const [canal, hauteur] = cle.split(':')
+    if (canal === canalId) resultat.add(Number(hauteur))
+  }
+  return resultat
 }
 
 /** Projet vide : un kit de batterie de quatre sons, un pattern d'une mesure (16 pas). */
@@ -117,6 +145,8 @@ export const useStudio = create<EtatStudio>()((set, get) => {
           transport.surEtat((etat) => set({ transport: etat }))
           synchroniser(get().projet)
           set({ chargement: { phase: 'pret' } })
+          const disposition = await detecterDisposition()
+          set({ clavier: { ...get().clavier, disposition } })
         } catch (erreur) {
           console.error(erreur)
           set({ chargement: { phase: 'erreur', message: "Le son n'a pas pu être chargé." } })
@@ -223,6 +253,76 @@ export const useStudio = create<EtatStudio>()((set, get) => {
 
     definirNoteDefaut(canalId, hauteur) {
       appliquer(definirNoteDefaut(get().projet, canalId, hauteur))
+    },
+
+    remplacerNotes(canalId, notes) {
+      appliquer(
+        produce(get().projet, (p) => {
+          const pattern = p.patterns.find((x) => x.id === p.patternActif)
+          if (pattern && p.canaux.some((c) => c.id === canalId)) pattern.notes[canalId] = notes
+        }),
+      )
+    },
+
+    enregistrement: false,
+    basculerEnregistrement() {
+      set({ enregistrement: !get().enregistrement })
+    },
+
+    clavier: { base: BASE_DEFAUT, disposition: 'azerty' },
+    changerOctave(sens) {
+      const { clavier } = get()
+      set({ clavier: { ...clavier, base: decalerBase(clavier.base, sens) } })
+    },
+    changerDisposition(disposition) {
+      const { clavier } = get()
+      set({ clavier: { ...clavier, disposition: disposition ?? (clavier.disposition === 'azerty' ? 'qwerty' : 'azerty') } })
+    },
+
+    jouerNote(hauteur, velocite = 100, canalId = get().canalSelectionne ?? undefined) {
+      if (!canalId || !moteur || hauteur < 0 || hauteur > 127) return
+      const midi = attribuerCanauxMidi(get().projet.canaux).get(canalId)
+      if (midi === undefined) return
+      void moteur.demarrer()
+      const cle = `${canalId}:${hauteur}`
+      const tenue = tenues.get(cle)
+      if (tenue) {
+        tenue.appuis += 1
+        return
+      }
+      const v = Math.min(127, Math.max(1, Math.round(velocite)))
+      moteur.noteOn(midi, hauteur, v)
+      const enLecture = transport?.etat === 'lecture'
+      tenues.set(cle, { appuis: 1, debut: enLecture ? transport!.positionAbsolue : null, velocite: v })
+    },
+
+    relacherNote(hauteur, canalId = get().canalSelectionne ?? undefined) {
+      if (!canalId) return
+      const cle = `${canalId}:${hauteur}`
+      const tenue = tenues.get(cle)
+      if (!tenue) return
+      if (--tenue.appuis > 0) return
+      tenues.delete(cle)
+      const midi = attribuerCanauxMidi(get().projet.canaux).get(canalId)
+      if (midi !== undefined) moteur?.noteOff(midi, hauteur)
+      // enregistrement : la note jouée s'inscrit dans le pattern, à sa place dans la boucle
+      if (get().enregistrement && tenue.debut !== null && transport?.etat === 'lecture') {
+        const longueur = transport.longueur
+        const tic = Math.floor(tenue.debut % longueur)
+        const duree = Math.max(1, Math.min(Math.round(transport.positionAbsolue - tenue.debut), longueur - tic))
+        const pattern = get().projet.patterns.find((p) => p.id === get().projet.patternActif)
+        const notes = pattern?.notes[canalId] ?? []
+        get().remplacerNotes(canalId, [...notes, { tic, duree, hauteur, velocite: tenue.velocite }])
+      }
+    },
+
+    relacherTout() {
+      for (const cle of [...tenues.keys()]) {
+        const [canal, hauteur] = cle.split(':')
+        const tenue = tenues.get(cle)
+        if (tenue) tenue.appuis = 1
+        get().relacherNote(Number(hauteur), canal)
+      }
     },
 
     changerVolumeMaitre(volume) {
