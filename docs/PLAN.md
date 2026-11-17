@@ -98,7 +98,15 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   endroit), pistes, clips aimantés à la mesure (poser, glisser, supprimer au clic droit, double
   clic pour choisir le pattern), aperçu des notes, tête de lecture, zoom ; mode PAT/SONG : le
   transport joue tout l'arrangement et boucle à sa fin. 67 tests unitaires, 42 tests navigateur.
-- [ ] Étape 7 — vues d'instruments avancées
+- [x] **Publication** : https://al00ss.github.io/song-audio/, construite et publiée par la CI quand
+  les tests passent sur `main` ; les tests navigateur peuvent viser le site publié (URL_STUDIO).
+- [x] **Étape 7 — vues d'instruments avancées** : manche pour guitare, basse (et sitar, banjo…) avec
+  doigté par programmation dynamique (une corde par note, écart de main ≤ 4 cases, préférence
+  pour le bas du manche, déplacements limités ; un accord de do donne le do ouvert), touche sans
+  frettes pour violon, alto, violoncelle, contrebasse ; harpe (cordes diatoniques colorées,
+  glissando) ; pistons des cuivres (trompette, tuba, cor) au-dessus du clavier ; les bois restent
+  joués au clavier. 75 tests unitaires, 49 tests navigateur.
+- [ ] Étape 8 — jouer avec l'orchestre, export
 
 ## Notes techniques vérifiées
 

@@ -9,6 +9,9 @@ import { caractere, disposition, etiquettes, HAUTEUR_NOIRE, nombreDeBlanches, to
 import { familleInstrument, nomInstrument, nomNote, nomSonBatterie, vueInstrument } from '../../musique/gm'
 import { type Canal, notesAuTic, patternActif } from '../../projet/modele'
 import { useImage } from '../commun/useImage'
+import { accordagePour } from '../../musique/manche'
+import { CUIVRES_A_PISTONS } from '../../musique/vents'
+import { Harpe, Manche, Pistons } from './VuesAvancees'
 
 const TOUCHES = disposition()
 const NB_BLANCHES = nombreDeBlanches(TOUCHES)
@@ -76,7 +79,9 @@ function Clavier({ canal }: { canal: Canal }) {
           </button>{' '}
           : {caractere('KeyZ', clavier.disposition)}…{caractere('Slash', clavier.disposition)} et {caractere('KeyQ', clavier.disposition)}…{caractere('BracketRight', clavier.disposition)} · ← → octave
         </span>
-        {vueInstrument(canal.programme) !== 'clavier' && <span className="ml-auto">Vue dédiée ({vueInstrument(canal.programme)}) : étape 7</span>}
+        {vueInstrument(canal.programme) === 'vents' && !CUIVRES_A_PISTONS[canal.programme] && (
+          <span className="ml-auto" title="Les doigtés des bois (clés de flûte, de saxophone…) ne sont pas représentés">Bois : joués au clavier</span>
+        )}
       </div>
       <div ref={racine} className="relative min-h-0 flex-1 overflow-x-auto overflow-y-hidden">
         <div
@@ -201,5 +206,19 @@ export function VueInstrument() {
   const { projet, canalSelectionne } = useStudio()
   const canal = projet.canaux.find((c) => c.id === canalSelectionne)
   if (!canal) return <p className="p-3 text-discret">Sélectionnez un instrument dans le Channel Rack.</p>
-  return canal.batterie ? <Batterie canal={canal} /> : <Clavier canal={canal} />
+  if (canal.batterie) return <Batterie canal={canal} />
+  const accordage = accordagePour(canal.programme)
+  if (accordage) return <Manche canal={canal} accordage={accordage} />
+  if (canal.programme === 46) return <Harpe canal={canal} />
+  if (CUIVRES_A_PISTONS[canal.programme]) {
+    return (
+      <div className="flex h-full flex-col">
+        <Pistons canal={canal} />
+        <div className="min-h-0 flex-1">
+          <Clavier canal={canal} />
+        </div>
+      </div>
+    )
+  }
+  return <Clavier canal={canal} />
 }

@@ -9,7 +9,7 @@ instruments jouent ensemble, et chacun a une vue (clavier, batterie, manche…) 
 pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
 [docs/PLAN.md](docs/PLAN.md).
 
-**Avancement : étapes 0 à 6 terminées (fondations, coquille, navigateur, séquenceur pas à pas, piano roll et vue d'instrument, mixer, playlist).**
+**Avancement : étapes 0 à 7 terminées (fondations, coquille, navigateur, séquenceur pas à pas, piano roll et vue d'instrument, mixer, playlist, vues d'instruments avancées).**
 
 - Interface de studio : barre de transport, panneaux ancrables (navigateur, Channel Rack,
   playlist, piano roll, instrument, mixer), raccourcis F5 à F9 et Espace, disposition gardée
@@ -24,6 +24,8 @@ pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
   stéréo, envoi de réverbération), maître avec limiteur
 - Playlist : plusieurs patterns arrangés dans le temps, mode PAT (pattern en boucle) ou SONG
   (tout le morceau)
+- Vues dédiées : manche de guitare et de basse (doigté calculé), cordes frottées, harpe,
+  pistons des cuivres
 
 - Modèle de projet (canaux, patterns, playlist, mixage), sauvegarde JSON vérifiée
 - Import de fichiers MIDI multi-pistes : chaque piste garde son instrument General MIDI,
