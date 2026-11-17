@@ -60,6 +60,18 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   demande) : chaque visiteur les télécharge, et GitHub refuse les fichiers de plus de 100 Mo.
 - La qualité maximale (banques gratuites de plusieurs Go) est réservée à la version de bureau
   Tauri de l'étape 10, qui lit les sons depuis le disque.
+- L'application de bureau sera dans un **nouveau dépôt**, créé après la fin de l'étape 9. Ce
+  dépôt-ci (song-audio) reste la version web et doit continuer de fonctionner sur
+  https://al00ss.github.io/song-audio/.
+
+## Étape 8 en cours (pause du 2026-11-17)
+
+- Fait et testé : export MIDI (`src/projet/exportMidi.ts`, 5 tests unitaires dont l'aller-retour).
+- Écrit, pas encore testé ni branché dans l'interface : export WAV hors ligne
+  (`src/audio/exportWav.ts`) et `routageMixer` partagé dans `src/audio/moteur.ts`.
+- Reste : menu Fichier (ouvrir/enregistrer le projet, exporter MIDI et WAV), sauvegarde
+  automatique, « jouer avec l'orchestre » (partie coupée servant de guide, notes justes
+  comptées), tests navigateur, puis commit de fin d'étape.
 
 ## Avancement
 

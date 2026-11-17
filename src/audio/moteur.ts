@@ -41,9 +41,26 @@ async function telecharger(url: string, progression?: Progression): Promise<Arra
   return resultat.buffer
 }
 
+/**
+ * Routage du mixer : canal MIDI (sortie séparée, 16 au plus) -> piste qui le reçoit (0 = maître
+ * si la piste demandée n'existe pas).
+ */
+export function routageMixer(projet: Projet): Map<number, number> {
+  const attribution = attribuerCanauxMidi(projet.canaux)
+  const pistes = new Set(projet.mixage.map((p) => p.index))
+  const routage = new Map<number, number>()
+  for (const canal of projet.canaux) {
+    const midi = attribution.get(canal.id)
+    if (midi !== undefined) routage.set(midi % SORTIES_SEPAREES, pistes.has(canal.pisteMixage) ? canal.pisteMixage : 0)
+  }
+  return routage
+}
+
 export class MoteurSon implements Destination, Horloge {
   readonly contexte: AudioContext
   readonly synth: WorkletSynthesizer
+  /** Copie de la banque de sons (l'original est transféré au processeur), pour l'export WAV. */
+  readonly banque: ArrayBuffer
   readonly mixeur: Mixeur
   readonly #analyseur: AnalyserNode
   readonly #onde = new Float32Array(1024)
@@ -51,9 +68,10 @@ export class MoteurSon implements Destination, Horloge {
   #enAttente: [number, number][] = []
   #disponibleA = 0
 
-  private constructor(contexte: AudioContext, synth: WorkletSynthesizer) {
+  private constructor(contexte: AudioContext, synth: WorkletSynthesizer, banque: ArrayBuffer) {
     this.contexte = contexte
     this.synth = synth
+    this.banque = banque
     // Chaque canal MIDI sort séparément vers sa tranche du mixer ; la sortie principale du
     // synthétiseur (tous les canaux mélangés) n'est pas utilisée.
     const sortie = contexte.createGain()
@@ -67,10 +85,11 @@ export class MoteurSon implements Destination, Horloge {
   static async creer(urlBanque: string, progression?: Progression): Promise<MoteurSon> {
     const contexte = new AudioContext({ latencyHint: 'interactive' })
     const [banque] = await Promise.all([telecharger(urlBanque, progression), contexte.audioWorklet.addModule(urlProcesseur)])
+    const copie = banque.slice(0)
     const synth = new WorkletSynthesizer(contexte)
     await synth.soundBankManager.addSoundBank(banque, 'gm')
     await synth.isReady
-    return new MoteurSon(contexte, synth)
+    return new MoteurSon(contexte, synth, copie)
   }
 
   /** À appeler depuis un geste de l'utilisateur : les navigateurs bloquent le son avant. */
@@ -91,8 +110,6 @@ export class MoteurSon implements Destination, Horloge {
     const attribution = attribuerCanauxMidi(projet.canaux)
     const plusHaut = Math.max(-1, ...attribution.values())
     for (let i = this.synth.midiChannels.length; i <= plusHaut; i++) this.synth.addNewChannel()
-    const pistes = new Set(projet.mixage.map((p) => p.index))
-    const routage = new Map<number, number>()
     for (const canal of projet.canaux) {
       const midi = attribution.get(canal.id)
       if (midi === undefined) continue
@@ -102,10 +119,9 @@ export class MoteurSon implements Destination, Horloge {
       this.synth.controllerChange(midi, CC_PAN, Math.round(((canal.pan + 1) / 2) * 127))
       this.synth.controllerChange(midi, CC_REVERB, 0)
       this.synth.controllerChange(midi, CC_CHORUS, 0)
-      routage.set(midi % SORTIES_SEPAREES, pistes.has(canal.pisteMixage) ? canal.pisteMixage : 0)
     }
     this.mixeur.configurer(projet.mixage)
-    this.mixeur.router(routage)
+    this.mixeur.router(routageMixer(projet))
   }
 
   /** Crête stéréo d'une piste du mixer (0 = maître). */
