@@ -67,7 +67,12 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
 - [x] **Étape 1 bis — charte graphique** : variables du thème (Tailwind et Dockview), afficheurs
   de type écran, boutons rotatifs habillés ; l'écran complet sert de maquette (capture dans les
   résultats des tests navigateur).
-- [ ] Étape 2 — navigateur (recherche BitMidi)
+- [x] **Étape 2 — navigateur** : recherche en ligne BitMidi (délai de frappe, annulation des
+  requêtes dépassées, messages aucun résultat / panne / fichier introuvable), un résultat chargé
+  comme projet multi-pistes puis joué, cinq morceaux du domaine public, démo, import par
+  glisser-déposer, 128 instruments. 36 tests unitaires, 21 tests navigateur (dont un sur le vrai
+  réseau, lancé avec `RESEAU=1`).
+- [ ] Étape 3 — Channel Rack et séquenceur pas à pas
 
 ## Notes techniques vérifiées
 

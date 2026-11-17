@@ -25,10 +25,14 @@ interface EtatStudio {
   transport: EtatTransport
   chargement: Chargement
   message: string | null
+  /** Morceau en cours de téléchargement (navigateur), ou null. */
+  morceauEnChargement: string | null
   initialiser(): Promise<void>
   remplacerProjet(projet: Projet): void
   chargerDemo(): void
   importerMidi(fichier: File): Promise<void>
+  /** Charge un fichier MIDI en ligne comme projet, puis le joue si demandé. */
+  chargerMidiDepuisUrl(url: string, nom: string, options?: { jouer?: boolean }): Promise<void>
   basculerLecture(): Promise<void>
   arreter(): void
   changerTempo(tempo: number): void
@@ -59,6 +63,17 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     transport?.definirProjet(projet)
   }
 
+  /** Remplace le projet par un fichier MIDI ; faux (et un message) s'il n'a aucune note. */
+  const charger = (midi: Midi, nom: string): boolean => {
+    const projet = depuisMidi(midi, nom)
+    if (!projet.canaux.length) {
+      set({ message: `« ${nom} » ne contient aucune note.` })
+      return false
+    }
+    get().remplacerProjet(projet)
+    return true
+  }
+
   const demo = creerDemo()
   return {
     projet: demo,
@@ -66,6 +81,7 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     transport: 'arret',
     chargement: { phase: 'son', progression: 0 },
     message: null,
+    morceauEnChargement: null,
 
     initialiser() {
       initialisation ??= (async () => {
@@ -96,17 +112,28 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     },
 
     async importerMidi(fichier) {
+      const nom = fichier.name.replace(/\.midi?$/i, '')
       try {
-        const midi = new Midi(await fichier.arrayBuffer())
-        const projet = depuisMidi(midi, fichier.name.replace(/\.midi?$/i, ''))
-        if (!projet.canaux.length) {
-          set({ message: 'Ce fichier ne contient aucune note.' })
-          return
-        }
-        get().remplacerProjet(projet)
+        if (!charger(new Midi(await fichier.arrayBuffer()), nom)) return
       } catch (erreur) {
         console.error(erreur)
         set({ message: `Fichier MIDI illisible : ${fichier.name}` })
+      }
+    },
+
+    async chargerMidiDepuisUrl(url, nom, { jouer = true } = {}) {
+      set({ morceauEnChargement: nom, message: null })
+      try {
+        const reponse = await fetch(url)
+        if (!reponse.ok) throw new Error(`HTTP ${reponse.status}`)
+        const midi = new Midi(await reponse.arrayBuffer())
+        if (get().morceauEnChargement !== nom) return // un autre morceau a été demandé entre-temps
+        if (charger(midi, nom) && jouer) await get().basculerLecture()
+      } catch (erreur) {
+        console.error(erreur)
+        set({ message: `Impossible de charger « ${nom} » (fichier introuvable ou illisible).` })
+      } finally {
+        if (get().morceauEnChargement === nom) set({ morceauEnChargement: null })
       }
     },
 

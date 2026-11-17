@@ -166,3 +166,38 @@ describe('import MIDI', () => {
     expect(appliquerPedale([{ tic: 0, duree: 10, hauteur: 60, velocite: 80 }], [[0, Infinity]])[0].duree).toBe(10)
   })
 })
+
+describe('recherche en ligne (BitMidi)', () => {
+  it('met en forme les noms de fichiers et l’adresse de recherche', async () => {
+    const { adresseRecherche, formaterEcoutes, nomLisible } = await import('./recherche')
+    expect(nomLisible('chopin-ballade_1.mid')).toBe('chopin ballade 1')
+    expect(nomLisible('Clair-De-Lune.MIDI')).toBe('Clair De Lune')
+    expect(nomLisible('.mid')).toBe('Sans titre')
+    expect(adresseRecherche('  satie gymnopédie ')).toBe('https://bitmidi.com/api/midi/search?q=satie%20gymnop%C3%A9die&page=0')
+    expect(formaterEcoutes(10781)).toBe('10\u202f781 écoutes')
+    expect(formaterEcoutes(1)).toBe('1 écoute')
+  })
+
+  it('ne garde que les résultats jouables, et signale une panne', async () => {
+    const { chercherBitMidi, lireResultats } = await import('./recherche')
+    expect(lireResultats(null)).toEqual([])
+    expect(lireResultats({ result: { results: 'n importe quoi' } })).toEqual([])
+    let adresse = ''
+    const recuperer = (async (url: string) => {
+      adresse = url
+      return {
+        ok: true,
+        json: async () => ({ result: { results: [
+          { id: 23776, name: 'chopin-ballade1.mid', downloadUrl: '/uploads/23776.mid', plays: 10781 },
+          { id: 2, name: 'sans-fichier.mid' },
+        ] } }),
+      }
+    }) as unknown as typeof fetch
+    expect(await chercherBitMidi('chopin', recuperer)).toEqual([
+      { id: 'bitmidi-23776', titre: 'chopin ballade1', nomFichier: 'chopin-ballade1.mid', url: 'https://bitmidi.com/uploads/23776.mid', ecoutes: 10781 },
+    ])
+    expect(adresse).toContain('q=chopin')
+    const enPanne = (async () => ({ ok: false, status: 503 })) as unknown as typeof fetch
+    await expect(chercherBitMidi('x', enPanne)).rejects.toThrow(/503/)
+  })
+})

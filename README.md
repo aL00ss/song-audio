@@ -7,10 +7,12 @@ instruments jouent ensemble, et chacun a une vue (clavier, batterie, manche…) 
 pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
 [docs/PLAN.md](docs/PLAN.md).
 
-**Avancement : étapes 0 (fondations) et 1 (coquille du studio) terminées.**
+**Avancement : étapes 0 (fondations), 1 (coquille du studio) et 2 (navigateur) terminées.**
 
 - Interface de studio : barre de transport, panneaux ancrables (navigateur, Channel Rack,
   playlist, piano roll, instrument, mixer), raccourcis F5 à F9 et Espace, disposition gardée
+- Navigateur : recherche de fichiers MIDI en ligne (BitMidi), morceaux de démonstration,
+  import par glisser-déposer, 128 instruments General MIDI
 
 - Modèle de projet (canaux, patterns, playlist, mixage), sauvegarde JSON vérifiée
 - Import de fichiers MIDI multi-pistes : chaque piste garde son instrument General MIDI,
@@ -24,7 +26,7 @@ pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
 npm install
 npm run dev        # http://localhost:5173
 npm test           # tests unitaires (Vitest)
-npm run test:e2e   # tests navigateur (Playwright, Chromium)
+npm run test:e2e   # tests navigateur (Playwright, Chromium) ; RESEAU=1 pour le test BitMidi réel
 npm run build
 ```
 
@@ -36,4 +38,10 @@ Pour les tests navigateur, installer une fois Chromium : `npx playwright install
   S. Christian Collins (licence dans `public/soundfonts/GeneralUserGS-LICENSE.txt`), dans la
   version SF3 publiée par le projet SpessaSynth.
 - **Moteur** : [SpessaSynth](https://github.com/spessasus/spessasynth_lib) (Apache-2.0).
-- **Fichiers MIDI** : [@tonejs/midi](https://github.com/Tonejs/Midi) (MIT).
+- **Lecture des fichiers MIDI** : [@tonejs/midi](https://github.com/Tonejs/Midi) (MIT).
+- **Morceaux de démonstration** (`public/morceaux/`) : gravures du
+  [Mutopia Project](https://www.mutopiaproject.org) dans le domaine public (Stelios Samelis,
+  Keith OHara, Rune Zedeler et Chris Sawer, Guy D. Lederfein, Tobias Erbsland), interprétation
+  Alexandre Besnier.
+- **Recherche en ligne** : [BitMidi](https://bitmidi.com).
+- **Interface** : [Dockview](https://dockview.dev) (MIT), [audio/ui](https://www.audio-ui.dev) (MIT).
