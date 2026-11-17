@@ -3,12 +3,13 @@
 // est transmise.
 
 import { Midi } from '@tonejs/midi'
+import { produce } from 'immer'
 import { create } from 'zustand'
 import { MoteurSon } from '../audio/moteur'
 import { type EtatTransport, Transport } from '../audio/transport'
 import { creerDemo } from '../projet/demo'
 import { depuisMidi } from '../projet/importMidi'
-import { type Canal, modifierCanal, type Projet } from '../projet/modele'
+import { ajouterCanal, attribuerCanauxMidi, type Canal, modifierCanal, type Projet } from '../projet/modele'
 
 export const URL_BANQUE = `${import.meta.env.BASE_URL}soundfonts/GeneralUserGS.sf3`
 
@@ -19,6 +20,8 @@ export type Chargement =
 
 interface EtatStudio {
   projet: Projet
+  /** Canal sélectionné dans le rack (piano roll et vue d'instrument le suivent). */
+  canalSelectionne: string | null
   transport: EtatTransport
   chargement: Chargement
   message: string | null
@@ -30,6 +33,9 @@ interface EtatStudio {
   arreter(): void
   changerTempo(tempo: number): void
   modifierCanal(id: string, modifications: Partial<Omit<Canal, 'id'>>): void
+  selectionnerCanal(id: string): void
+  ajouterInstrument(programme: number, batterie?: boolean): void
+  changerVolumeMaitre(volume: number): void
 }
 
 let moteur: MoteurSon | null = null
@@ -53,8 +59,10 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     transport?.definirProjet(projet)
   }
 
+  const demo = creerDemo()
   return {
-    projet: creerDemo(),
+    projet: demo,
+    canalSelectionne: demo.canaux[0]?.id ?? null,
     transport: 'arret',
     chargement: { phase: 'son', progression: 0 },
     message: null,
@@ -79,7 +87,7 @@ export const useStudio = create<EtatStudio>()((set, get) => {
 
     remplacerProjet(projet) {
       transport?.arreter()
-      set({ projet, message: null })
+      set({ projet, message: null, canalSelectionne: projet.canaux[0]?.id ?? null })
       synchroniser(projet)
     },
 
@@ -123,6 +131,30 @@ export const useStudio = create<EtatStudio>()((set, get) => {
 
     modifierCanal(id, modifications) {
       const projet = modifierCanal(get().projet, id, modifications)
+      set({ projet })
+      synchroniser(projet)
+    },
+
+    selectionnerCanal(id) {
+      if (get().projet.canaux.some((c) => c.id === id)) set({ canalSelectionne: id })
+    },
+
+    ajouterInstrument(programme, batterie = false) {
+      try {
+        const { projet, id } = ajouterCanal(get().projet, { programme, batterie })
+        attribuerCanauxMidi(projet.canaux) // refuse au-delà du nombre de canaux MIDI disponibles
+        set({ projet, canalSelectionne: id, message: null })
+        synchroniser(projet)
+      } catch (erreur) {
+        set({ message: erreur instanceof Error ? erreur.message : String(erreur) })
+      }
+    },
+
+    changerVolumeMaitre(volume) {
+      const valeur = Math.min(1, Math.max(0, volume))
+      const projet = produce(get().projet, (p) => {
+        if (p.mixage[0]) p.mixage[0].volume = valeur
+      })
       set({ projet })
       synchroniser(projet)
     },

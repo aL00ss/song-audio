@@ -57,7 +57,17 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
 
 - [x] **Étape 0 — fondations** : modèle, sauvegarde, import MIDI, transport, moteur ; 27 tests
   unitaires, 8 tests navigateur.
-- [ ] Étape 1 — coquille du studio
+- [x] **Étape 1 — coquille du studio** : barre de transport (lecture/pause, arrêt, mode PAT,
+  tempo, afficheurs position et temps, volume général), six panneaux Dockview ancrables avec
+  tailles de départ, raccourcis F5–F9, Espace et Maj+Espace, disposition sauvegardée et
+  réinitialisable, navigateur (démo, import par glisser-déposer, 128 instruments), Channel Rack
+  (diodes d'activité, muet, solo, panoramique et volume en boutons rotatifs, aperçu des notes),
+  annonces d'accessibilité en français ; intégration continue GitHub. 34 tests unitaires,
+  17 tests navigateur.
+- [x] **Étape 1 bis — charte graphique** : variables du thème (Tailwind et Dockview), afficheurs
+  de type écran, boutons rotatifs habillés ; l'écran complet sert de maquette (capture dans les
+  résultats des tests navigateur).
+- [ ] Étape 2 — navigateur (recherche BitMidi)
 
 ## Notes techniques vérifiées
 

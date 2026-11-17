@@ -134,7 +134,7 @@ test('un fichier MIDI importé joue tous ses instruments', async ({ page }) => {
   await page.getByTestId('import').setInputFiles({ name: 'essai.mid', mimeType: 'audio/midi', buffer: Buffer.from(midi.toArray()) })
   await expect(page.getByTestId('canal')).toHaveCount(3)
   await expect(page.getByTestId('canal').nth(1)).toContainText('Violon')
-  await expect(page.getByTestId('canal').nth(2)).toContainText('Batterie (canal 10)')
+  await expect(page.getByTestId('canal').nth(2).getByTitle('Batterie (canal 10)')).toHaveText('Batterie')
   await page.getByTestId('lecture').click()
   const max = await voixMax(page, 1500)
   expect(max.every((v) => v > 0), `voix par canal : ${max}`).toBe(true)
@@ -142,7 +142,7 @@ test('un fichier MIDI importé joue tous ses instruments', async ({ page }) => {
 
 test('un fichier illisible est refusé avec un message', async ({ page }) => {
   await page.getByTestId('import').setInputFiles({ name: 'faux.mid', mimeType: 'audio/midi', buffer: Buffer.from('pas un midi') })
-  await expect(page.getByRole('alert')).toHaveText('Fichier MIDI illisible : faux.mid')
+  await expect(page.getByTestId('message')).toHaveText('Fichier MIDI illisible : faux.mid')
   erreurs.length = 0 // l'erreur est aussi écrite dans la console, volontairement
   await expect(page.getByTestId('canal')).toHaveCount(4)
 })

@@ -34,3 +34,26 @@ body {
   outline: 2px solid var(--color-accent);
   outline-offset: 1px;
 }
+
+/* Panneaux ancrables : thème Dockview sombre, aux couleurs du studio. */
+.theme-studio {
+  --dv-group-view-background-color: var(--color-panneau);
+  --dv-tabs-and-actions-container-background-color: #1f242a;
+  --dv-tabs-and-actions-container-height: 26px;
+  --dv-tabs-and-actions-container-font-size: 12px;
+  --dv-activegroup-visiblepanel-tab-background-color: var(--color-panneau);
+  --dv-activegroup-hiddenpanel-tab-background-color: #1f242a;
+  --dv-inactivegroup-visiblepanel-tab-background-color: var(--color-panneau);
+  --dv-inactivegroup-hiddenpanel-tab-background-color: #1f242a;
+  --dv-activegroup-visiblepanel-tab-color: var(--color-accent);
+  --dv-activegroup-hiddenpanel-tab-color: var(--color-discret);
+  --dv-inactivegroup-visiblepanel-tab-color: var(--color-texte);
+  --dv-inactivegroup-hiddenpanel-tab-color: var(--color-discret);
+  --dv-tab-divider-color: #15191e;
+  --dv-separator-border: #11151a;
+  --dv-paneview-header-border-color: #11151a;
+  --dv-sash-color: #11151a;
+  --dv-active-sash-color: var(--color-accent);
+  --dv-drag-over-background-color: color-mix(in srgb, var(--color-accent) 25%, transparent);
+  font-family: var(--font-sans);
+}
