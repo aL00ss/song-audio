@@ -52,7 +52,7 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
 | 7 | Vues avancées | Guitare et basse (doigté par programmation dynamique), cordes frottées, cuivres et vents | Aucun accord injouable, écart ≤ 4 cases |
 | 8 | Jouer avec l'orchestre, export | Couper une piste pour la jouer soi-même, export WAV et MIDI | Tests d'export |
 | 9 | Finitions et sons améliorés (web) | Performance avec 16 instruments, mobile (un panneau à la fois), tests de chaque panneau ; sons améliorés mais légers, chargés à la demande : piano Salamander allégé (4–5 couches de vélocité, ≈ 20–30 Mo), sections d'orchestre tirées de VSCO 2 CE (CC0) converties en SF3 ; mentions obligatoires (Alexander Holm, Versilian Studios) | Suite navigateur complète |
-| 10 | Version de bureau (Tauri) | Même interface React dans une application Tauri ; moteur sonore en Rust qui lit depuis le disque la meilleure banque gratuite possible, même au-delà de 5 Go (Salamander Grand Piano complet, VSCO 2 CE, Virtual Playing Orchestra… — surtout au format SFZ : lecteur à choisir, par exemple sfizz) ; le site web reste disponible avec les banques légères | Tests de l'application de bureau |
+| 10 | Version de bureau (Tauri), sons de niveau professionnel | Même interface React dans une application Tauri ; moteur sonore en Rust ; banques professionnelles gratuites et redistribuables lues depuis le disque (plusieurs Go), synthétiseurs et effets intégrés, accueil des greffons CLAP/VST3 : détail dans « Étape 10 » ci-dessous ; le site web reste disponible avec les banques légères | Justesse, niveaux, latence, charge avec 16 instruments, rendu hors ligne |
 
 ## Décisions (2026-11-17)
 
@@ -63,6 +63,66 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
 - L'application de bureau sera dans un **nouveau dépôt**, créé après la fin de l'étape 9. Ce
   dépôt-ci (song-audio) reste la version web et doit continuer de fonctionner sur
   https://al00ss.github.io/song-audio/.
+
+## Étape 10 : sons de niveau professionnel (recherche du 2026-11-18)
+
+But : des sons qui tiennent la comparaison avec un studio commercial comme FL Studio. Deux
+moitiés, car la musique actuelle mêle les deux : des instruments acoustiques échantillonnés
+(banques gratuites enregistrées par des professionnels) et des sons électroniques (synthétiseurs
+et effets), que des échantillons seuls ne remplacent pas.
+
+Règle : seulement des banques dont la licence permet de les **redistribuer** dans une
+application gratuite (CC0, CC BY, ou « sans restriction »). Les crédits obligatoires sont
+affichés dans l'application (page Crédits) et dans le dépôt.
+
+### Banques acoustiques retenues (licences vérifiées)
+
+| Famille | Banque | Licence | Taille | Points forts |
+|---|---|---|---|---|
+| Piano à queue | Salamander Grand Piano V3 complet, 48 kHz 24 bits (Alexander Holm) | CC BY 3.0 | 1,2 Go | 16 couches de vélocité, sons de relâchement et de pédale |
+| Pianos, clavecins | VCSL Keys (Versilian Studios) : 3 pianos à queue, 2 droits, 5 clavecins | CC0 | 680 Mo | variété de timbres |
+| Orchestre | VSCO 2 CE complet (Versilian Studios) : toutes les articulations (tenu, vibrato, spiccato, pizzicato, trémolo, sourdines) | CC0 | 2,3 Go | sections et solistes |
+| Instruments variés | VCSL complet (Versilian Studios) : saxophones, flûtes à bec, harmonica, orgue, percussions | CC0 | 5 Go | complète l'orchestre |
+| Orchestre, complément | University of Iowa MIS (Lawrence Fritts) : pp, mf, ff, note par note | « sans restriction » | — | enregistré en chambre anéchoïque (réverbération à ajouter) |
+| Batterie acoustique | Naked Drums (Wilkinson Audio) : 10 prises, 5 couches, plusieurs micros | CC BY 4.0 | 1,3 Go | qualité studio |
+| Batterie acoustique | DrumGizmo DRS Kit et Muldjord Kit | CC BY 4.0 | 750 + 350 Mo | prise de son complète |
+| Batterie acoustique | Karoryfer Big Rusty Drums, Unruly Drums | CC0 | — | autres couleurs |
+| Basse électrique | Karoryfer Growlybass, Swagbass, Fashionbass, Black and Blue Basses | CC0 | — | 3–4 couches, 4 prises |
+| Contrebasse, guitare | Karoryfer Meatbass, Emilyguitar | à vérifier avant usage | — | — |
+
+Écartées : Piano in 162 (redistribution interdite), Philharmonia Orchestra (interdit de les
+diffuser « telles quelles »), Sonatina Symphonic Orchestra (Sampling Plus, statut incertain),
+Virtual Playing Orchestra (redistribution libre mais contient Philharmonia et Sonatina ; on
+pourra proposer de l'installer soi-même), jRhodes3d (échantillons CC BY-NC).
+Manques des banques libres : piano électrique et orgue de qualité : ils seront synthétisés.
+
+### Sons électroniques : synthèse et effets intégrés (Rust)
+
+- Synthétiseurs (bibliothèque fundsp, MIT/Apache) : soustractif analogique à 3 oscillateurs,
+  FM à 6 opérateurs, table d'ondes ; batteries électroniques synthétisées façon boîtes à
+  rythmes classiques (grosse caisse, caisse claire, charleston, clap), sans échantillons de
+  machines du commerce ; orgue à roues phoniques ; piano électrique en synthèse FM.
+- Effets par piste et sur le maître : réverbération algorithmique et à convolution
+  (réponses impulsionnelles libres, par exemple OpenAIR, CC BY), délai, chorus, flanger,
+  phaser, compresseur avec sidechain, saturation, égaliseur paramétrique, filtre automatisable.
+- Bibliothèque de préréglages par style (électro, hip-hop, pop, orchestral).
+- Accueil des greffons CLAP et VST3 : on peut alors jouer avec Surge XT, Vital, Dexed ou
+  Odin 2 (gratuits, GPL-3) installés par l'utilisateur.
+
+### Moteur et livraison
+
+- Lecture des SFZ par sfizz (BSD-2, API C liée depuis Rust) ; GeneralUser GS reste la banque de
+  secours pour les 128 instruments General MIDI ; sortie audio par cpal, faible latence.
+- Les banques ne sont pas dans l'installeur : un gestionnaire les télécharge au premier
+  lancement (choix, progression, reprise, somme de contrôle) et les range sur le disque.
+- Tests : justesse et niveaux de chaque instrument (même méthode qu'à l'étape 9), latence
+  sous 10 ms, charge avec 16 instruments, rendu hors ligne identique à la lecture.
+
+### Décision à prendre à la création du dépôt
+
+- Licence du nouveau dépôt : en GPL-3, on pourrait intégrer directement le moteur de Surge XT
+  dans l'application ; avec une licence permissive (MIT), Surge XT et Vital restent utilisables
+  comme greffons installés à part.
 
 ## Avancement
 
