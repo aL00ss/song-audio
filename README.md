@@ -30,6 +30,9 @@ pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
   soi-même et les notes justes sont comptées
 - Menu Fichier : ouvrir et enregistrer un projet, exporter en MIDI ou en WAV ; le projet est
   gardé automatiquement dans le navigateur
+- Sons plus fidèles téléchargés à la demande : piano à queue (Salamander) et cordes, cuivres,
+  bois (VSCO 2) ; les autres instruments viennent de GeneralUser GS
+- Sur téléphone, un panneau à la fois
 
 - Modèle de projet (canaux, patterns, playlist, mixage), sauvegarde JSON vérifiée
 - Import de fichiers MIDI multi-pistes : chaque piste garde son instrument General MIDI,

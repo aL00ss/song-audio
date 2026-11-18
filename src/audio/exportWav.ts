@@ -9,7 +9,7 @@ import { longueurExport, versMidiOctets } from '../projet/exportMidi'
 import type { Projet } from '../projet/modele'
 import type { ModeLecture } from './transport'
 import { Mixeur } from './mixer'
-import { type MoteurSon, routageMixer } from './moteur'
+import { creerCanaux, type MoteurSon, routageMixer } from './moteur'
 
 export const FREQUENCE_EXPORT = 44100
 /** Secondes ajoutées après la dernière mesure, pour laisser les sons et la réverbération s'éteindre. */
@@ -29,6 +29,8 @@ export async function rendre(moteur: MoteurSon, projet: Projet, mode: ModeLectur
   })
   await contexte.audioWorklet.addModule(urlProcesseur)
   const synth = new WorkletSynthesizer(contexte)
+  // autant de canaux que le synthétiseur du studio, avant que l'instantané ne les règle
+  creerCanaux(synth, moteur.synth.midiChannels.length)
   const mixeur = new Mixeur(contexte, synth, contexte.destination)
   mixeur.configurer(projet.mixage)
   mixeur.router(routageMixer(projet))

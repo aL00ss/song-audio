@@ -15,6 +15,8 @@ const CC_CHORUS = 93
 /** Le synthétiseur a 16 sorties séparées, une par canal MIDI (au-delà, elles se partagent). */
 const SORTIES_SEPAREES = 16
 const CC_COUPER_LE_SON = 120 // All Sound Off : coupe net
+/** Canaux MIDI créés dès le départ : de quoi tenir 16 instruments et plusieurs batteries. */
+const CANAUX_DE_DEPART = 32
 
 export type Progression = (recus: number, total: number) => void
 
@@ -57,6 +59,23 @@ export function routageMixer(projet: Projet): Map<number, number> {
   return routage
 }
 
+/**
+ * Porte le synthétiseur à `total` canaux MIDI. Le processeur annonce les réglages initiaux d'un
+ * nouveau canal avant de dire qu'il l'a créé, et la bibliothèque échoue sur ces annonces
+ * (« Cannot read properties of undefined ») : on les fait taire le temps de la création, et
+ * l'on inscrit nous-mêmes les canaux du côté de la bibliothèque.
+ */
+export function creerCanaux(synth: WorkletSynthesizer, total: number): void {
+  const nombre = total - synth.midiChannels.length
+  if (nombre <= 0) return
+  synth.setSystemParameter('eventsEnabled', false)
+  for (let i = 0; i < nombre; i++) {
+    synth.addNewChannel()
+    ;(synth as unknown as { addNewChannelInternal(): void }).addNewChannelInternal()
+  }
+  synth.setSystemParameter('eventsEnabled', true)
+}
+
 export class MoteurSon implements Destination, Horloge {
   readonly contexte: AudioContext
   readonly synth: WorkletSynthesizer
@@ -66,6 +85,11 @@ export class MoteurSon implements Destination, Horloge {
   readonly #supplementaires = new Map<string, ArrayBuffer>()
   readonly #chargements = new Map<string, Promise<void>>()
   #dernierProjet: Projet | null = null
+  /**
+   * Canaux MIDI demandés au synthétiseur. addNewChannel() est asynchrone : midiChannels ne
+   * s'allonge qu'à la confirmation du processeur, on ne peut donc pas s'y fier pour compter.
+   */
+  #canauxDemandes = CANAUX_DE_DEPART
   readonly mixeur: Mixeur
   readonly #analyseur: AnalyserNode
   readonly #onde = new Float32Array(1024)
@@ -85,6 +109,10 @@ export class MoteurSon implements Destination, Horloge {
     sortie.connect(this.#analyseur)
     sortie.connect(contexte.destination)
     this.mixeur = new Mixeur(contexte, synth, sortie)
+    // un canal ajouté (au-delà de 16) se règle dès que la bibliothèque le connaît
+    synth.eventHandler.addEvent('channelAdded', 'song-audio', () => {
+      if (this.#dernierProjet) this.appliquerProjet(this.#dernierProjet)
+    })
   }
 
   static async creer(urlBanque: string, progression?: Progression): Promise<MoteurSon> {
@@ -94,6 +122,7 @@ export class MoteurSon implements Destination, Horloge {
     const synth = new WorkletSynthesizer(contexte)
     await synth.soundBankManager.addSoundBank(banque, BANQUE_GM)
     await synth.isReady
+    creerCanaux(synth, CANAUX_DE_DEPART)
     return new MoteurSon(contexte, synth, copie)
   }
 
@@ -115,11 +144,13 @@ export class MoteurSon implements Destination, Horloge {
     this.#dernierProjet = projet
     const attribution = attribuerCanauxMidi(projet.canaux)
     const plusHaut = Math.max(-1, ...attribution.values())
-    for (let i = this.synth.midiChannels.length; i <= plusHaut; i++) this.synth.addNewChannel()
+    for (; this.#canauxDemandes <= plusHaut; this.#canauxDemandes++) this.synth.addNewChannel()
     for (const canal of projet.canaux) {
       const midi = attribution.get(canal.id)
-      if (midi === undefined) continue
-      this.synth.midiChannels[midi]?.setDrums(canal.batterie)
+      // Canal pas encore créé côté bibliothèque : ses réglages renverraient des événements
+      // qu'elle ne saurait pas placer ; il sera réglé à l'événement channelAdded.
+      if (midi === undefined || midi >= this.synth.midiChannels.length) continue
+      this.synth.midiChannels[midi].setDrums(canal.batterie)
       if (!canal.batterie) this.synth.programChange(midi, canal.programme)
       this.synth.controllerChange(midi, CC_VOLUME, Math.round(canal.volume * 127))
       this.synth.controllerChange(midi, CC_PAN, Math.round(((canal.pan + 1) / 2) * 127))
