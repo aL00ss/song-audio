@@ -4,6 +4,7 @@
 import { WorkletSynthesizer } from 'spessasynth_lib'
 import urlProcesseur from 'spessasynth_lib/dist/spessasynth_processor.min.js?url'
 import { attribuerCanauxMidi, type Projet } from '../projet/modele'
+import { BANQUE_GM, type BanqueSupplementaire, ordreDePriorite } from './banques'
 import { Mixeur, type NiveauStereo } from './mixer'
 import type { Destination, Horloge } from './transport'
 
@@ -61,6 +62,10 @@ export class MoteurSon implements Destination, Horloge {
   readonly synth: WorkletSynthesizer
   /** Copie de la banque de sons (l'original est transféré au processeur), pour l'export WAV. */
   readonly banque: ArrayBuffer
+  /** Copies des banques supplémentaires chargées, pour l'export WAV. */
+  readonly #supplementaires = new Map<string, ArrayBuffer>()
+  readonly #chargements = new Map<string, Promise<void>>()
+  #dernierProjet: Projet | null = null
   readonly mixeur: Mixeur
   readonly #analyseur: AnalyserNode
   readonly #onde = new Float32Array(1024)
@@ -87,7 +92,7 @@ export class MoteurSon implements Destination, Horloge {
     const [banque] = await Promise.all([telecharger(urlBanque, progression), contexte.audioWorklet.addModule(urlProcesseur)])
     const copie = banque.slice(0)
     const synth = new WorkletSynthesizer(contexte)
-    await synth.soundBankManager.addSoundBank(banque, 'gm')
+    await synth.soundBankManager.addSoundBank(banque, BANQUE_GM)
     await synth.isReady
     return new MoteurSon(contexte, synth, copie)
   }
@@ -107,6 +112,7 @@ export class MoteurSon implements Destination, Horloge {
 
   /** Instruments, volumes et panoramiques de chaque canal ; pistes et routage du mixer. */
   appliquerProjet(projet: Projet): void {
+    this.#dernierProjet = projet
     const attribution = attribuerCanauxMidi(projet.canaux)
     const plusHaut = Math.max(-1, ...attribution.values())
     for (let i = this.synth.midiChannels.length; i <= plusHaut; i++) this.synth.addNewChannel()
@@ -122,6 +128,36 @@ export class MoteurSon implements Destination, Horloge {
     }
     this.mixeur.configurer(projet.mixage)
     this.mixeur.router(routageMixer(projet))
+  }
+
+  /**
+   * Télécharge une banque supplémentaire et la place avant GeneralUser GS ; les canaux qui
+   * jouent un de ses instruments passent aussitôt dessus. Un seul téléchargement par banque.
+   */
+  chargerBanque(banque: BanqueSupplementaire, url: string, progression?: Progression): Promise<void> {
+    let chargement = this.#chargements.get(banque.id)
+    if (!chargement) {
+      chargement = (async () => {
+        const octets = await telecharger(url, progression)
+        const copie = octets.slice(0)
+        await this.synth.soundBankManager.addSoundBank(octets, banque.id)
+        this.#supplementaires.set(banque.id, copie)
+        this.synth.soundBankManager.priorityOrder = ordreDePriorite(this.#supplementaires.keys())
+        if (this.#dernierProjet) this.appliquerProjet(this.#dernierProjet)
+      })()
+      chargement.catch(() => this.#chargements.delete(banque.id)) // un nouvel essai reste possible
+      this.#chargements.set(banque.id, chargement)
+    }
+    return chargement
+  }
+
+  banqueChargee(id: string): boolean {
+    return this.#supplementaires.has(id)
+  }
+
+  /** Banques chargées, de la plus prioritaire à GeneralUser GS (pour un rendu hors ligne). */
+  banquesPourRendu(): ArrayBuffer[] {
+    return ordreDePriorite(this.#supplementaires.keys()).map((id) => (id === BANQUE_GM ? this.banque : this.#supplementaires.get(id)!).slice(0))
   }
 
   /** Crête stéréo d'une piste du mixer (0 = maître). */

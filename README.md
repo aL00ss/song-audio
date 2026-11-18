@@ -55,6 +55,10 @@ Pour les tests navigateur, installer une fois Chromium : `npx playwright install
 - **Sons** : [GeneralUser GS](https://schristiancollins.com/generaluser.php) v2.0.3,
   S. Christian Collins (licence dans `public/soundfonts/GeneralUserGS-LICENSE.txt`), dans la
   version SF3 publiée par le projet SpessaSynth.
+- **Piano à queue** : [Salamander Grand Piano V3](https://freepats.zenvoid.org/Piano/acoustic-grand-piano.html)
+  par **Alexander Holm**, sous licence [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/),
+  allégé pour le web (5 couches de vélocité, queues raccourcies, Ogg Vorbis) par
+  `outils/banques/piano.py` ; téléchargé seulement quand un projet utilise le piano à queue.
 - **Moteur** : [SpessaSynth](https://github.com/spessasus/spessasynth_lib) (Apache-2.0).
 - **Lecture des fichiers MIDI** : [@tonejs/midi](https://github.com/Tonejs/Midi) (MIT).
 - **Morceaux de démonstration** (`public/morceaux/`) : gravures du

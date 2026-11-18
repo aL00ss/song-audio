@@ -26,3 +26,4 @@ dist-ssr
 # Tests navigateur
 test-results
 playwright-report
+__pycache__/

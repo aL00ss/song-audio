@@ -40,7 +40,7 @@ export async function rendre(moteur: MoteurSon, projet: Projet, mode: ModeLectur
     midiSequence: BasicMIDI.fromArrayBuffer(tampon, projet.nom),
     snapshot: instantane as Parameters<WorkletSynthesizer['startOfflineRender']>[0]['snapshot'],
     loopCount: 0,
-    soundBankList: [{ bankOffset: 0, soundBankBuffer: moteur.banque.slice(0) }],
+    soundBankList: moteur.banquesPourRendu().map((soundBankBuffer) => ({ bankOffset: 0, soundBankBuffer })),
   })
   const rendu = await contexte.startRendering()
   synth.destroy()

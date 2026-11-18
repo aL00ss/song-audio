@@ -1,6 +1,7 @@
 // Barre du haut : transport (lecture, arrêt, mode), tempo, afficheurs, volume général,
 // boutons des panneaux.
 
+import { BANQUES } from '../../audio/banques'
 import { audio, useStudio } from '../../etat/studio'
 import { formaterPosition, formaterSecondes, ticsEnSecondes } from '../../musique/temps'
 import { BoutonRotatif } from '../commun/BoutonRotatif'
@@ -24,8 +25,10 @@ function Afficheur({ testId, titre, children }: { testId: string; titre: string;
 export function BarreTransport() {
   const {
     transport, chargement, projet, enregistrement, mode, basculerEnregistrement, basculerLecture, arreter, changerTempo,
-    changerVolumeMaitre, changerMode, choisirPattern, nouveauPattern, dupliquerPattern, exportEnCours,
+    changerVolumeMaitre, changerMode, choisirPattern, nouveauPattern, dupliquerPattern, exportEnCours, banques,
   } = useStudio()
+  const banqueEnCours = BANQUES.find((b) => banques[b.id]?.phase === 'chargement')
+  const progressionBanque = banqueEnCours ? banques[banqueEnCours.id] : null
   const position = useImage(() => audio.transport?.position ?? 0)
   const pret = chargement.phase === 'pret'
   const statut =
@@ -132,7 +135,12 @@ export function BarreTransport() {
       </span>
 
 
-      <span data-testid="statut" className="ml-auto text-discret">{statut}</span>
+      {banqueEnCours && progressionBanque?.phase === 'chargement' && (
+        <span data-testid="chargement-banque" className="ml-auto text-discret" title="Son plus fidèle, téléchargé à la demande">
+          {banqueEnCours.nom} : {Math.round(progressionBanque.progression * 100)} %
+        </span>
+      )}
+      <span data-testid="statut" className={`${banqueEnCours ? '' : 'ml-auto '}text-discret`}>{statut}</span>
     </header>
   )
 }

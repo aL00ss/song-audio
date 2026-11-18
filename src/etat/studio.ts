@@ -6,6 +6,7 @@ import { Midi } from '@tonejs/midi'
 import { get as lireStockage, set as ecrireStockage } from 'idb-keyval'
 import { produce } from 'immer'
 import { create } from 'zustand'
+import { banquesNecessaires } from '../audio/banques'
 import { exporterWav } from '../audio/exportWav'
 import { MoteurSon } from '../audio/moteur'
 import { type EtatTransport, type ModeLecture, Transport } from '../audio/transport'
@@ -27,6 +28,8 @@ export type Chargement =
   | { phase: 'pret' }
   | { phase: 'erreur'; message: string }
 
+export type EtatBanque = { phase: 'chargement'; progression: number } | { phase: 'prete' } | { phase: 'erreur' }
+
 interface EtatStudio {
   projet: Projet
   /** Canal sélectionné dans le rack (piano roll et vue d'instrument le suivent). */
@@ -36,6 +39,8 @@ interface EtatStudio {
   message: string | null
   /** Morceau en cours de téléchargement (navigateur), ou null. */
   morceauEnChargement: string | null
+  /** Banques supplémentaires demandées par le projet, par identifiant. */
+  banques: Record<string, EtatBanque>
   initialiser(): Promise<void>
   remplacerProjet(projet: Projet): void
   chargerDemo(): void
@@ -145,6 +150,28 @@ export const useStudio = create<EtatStudio>()((set, get) => {
   const synchroniser = (projet: Projet) => {
     moteur?.appliquerProjet(projet)
     transport?.definirProjet(projet, get().mode)
+    chargerBanques(projet)
+  }
+
+  /** Lance le téléchargement des banques supplémentaires utiles au projet (une fois chacune). */
+  const chargerBanques = (projet: Projet) => {
+    if (!moteur) return
+    const m = moteur
+    for (const banque of banquesNecessaires(projet)) {
+      const deja = get().banques[banque.id]
+      if (deja && deja.phase !== 'erreur') continue
+      const etat = (e: EtatBanque) => set({ banques: { ...get().banques, [banque.id]: e } })
+      etat({ phase: 'chargement', progression: 0 })
+      m.chargerBanque(banque, `${import.meta.env.BASE_URL}soundfonts/${banque.fichier}`, (recus, total) =>
+        etat({ phase: 'chargement', progression: total ? recus / total : 0 }),
+      ).then(
+        () => etat({ phase: 'prete' }),
+        (erreur) => {
+          console.warn(`Banque « ${banque.nom} » non chargée, General MIDI la remplace :`, erreur)
+          etat({ phase: 'erreur' })
+        },
+      )
+    }
   }
 
   /** Remplace le projet par un fichier MIDI ; faux (et un message) s'il n'a aucune note. */
@@ -200,6 +227,7 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     chargement: { phase: 'son', progression: 0 },
     message: null,
     morceauEnChargement: null,
+    banques: {},
 
     initialiser() {
       initialisation ??= (async () => {
