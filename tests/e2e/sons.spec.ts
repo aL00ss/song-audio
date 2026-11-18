@@ -1,5 +1,6 @@
 // Étape 9 : banques de sons supplémentaires, chargées à la demande.
 import { expect, type Page, test } from '@playwright/test'
+import { rendreNoteTenue } from './rendu.js'
 
 const erreurs: string[] = []
 
@@ -60,3 +61,26 @@ test('le piano Salamander se charge quand un piano est utilisé, et passe devant
   expect(fort / doux).toBeGreaterThan(2)
   expect(fort / doux).toBeLessThan(20)
 })
+
+for (const [programme, nom, hauteur, banque] of [
+  [40, 'violon', 67, 'cordes'],
+  [42, 'violoncelle', 48, 'cordes'],
+  [48, 'ensemble de cordes', 60, 'cordes'],
+  [56, 'trompette', 65, 'cuivres'],
+  [60, 'cor', 53, 'cuivres'],
+  [71, 'clarinette', 62, 'bois'],
+  [73, 'flûte', 72, 'bois'],
+] as const) {
+  test(`${nom} (VSCO 2) : juste, et la note tient grâce à la boucle`, async ({ page }) => {
+    const r = await rendreNoteTenue(page, programme, hauteur)
+    console.log(`${nom} : note ${r.note.toFixed(2)} (attendue ${hauteur}), niveau ${r.debut.toFixed(4)} -> ${r.fin.toFixed(4)}`)
+    const ordre = await page.evaluate(() => (window as any).__studio.audio.moteur.synth.soundBankManager.priorityOrder)
+    expect(ordre).toContain(banque)
+    expect(ordre.at(-1)).toBe('gm')
+    // l'autocorrélation peut tomber sur l'octave : on compare la classe de hauteur
+    const ecart = ((((r.note - hauteur) % 12) + 18) % 12) - 6
+    expect(Math.abs(ecart)).toBeLessThan(0.35)
+    expect(r.debut).toBeGreaterThan(0.005)
+    expect(r.fin).toBeGreaterThan(r.debut * 0.25)
+  })
+}

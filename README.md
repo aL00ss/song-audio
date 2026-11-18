@@ -59,6 +59,10 @@ Pour les tests navigateur, installer une fois Chromium : `npx playwright install
   par **Alexander Holm**, sous licence [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/),
   allégé pour le web (5 couches de vélocité, queues raccourcies, Ogg Vorbis) par
   `outils/banques/piano.py` ; téléchargé seulement quand un projet utilise le piano à queue.
+- **Cordes, cuivres et bois** : [VSCO 2 Community Edition](https://github.com/sgossner/VSCO-2-CE)
+  par **Versilian Studios**, sous licence CC0, allégé par `outils/banques/orchestre.py` (deux
+  nuances, boucles, niveaux égalisés) ; chaque famille est téléchargée seulement quand un
+  projet utilise un de ses instruments.
 - **Moteur** : [SpessaSynth](https://github.com/spessasus/spessasynth_lib) (Apache-2.0).
 - **Lecture des fichiers MIDI** : [@tonejs/midi](https://github.com/Tonejs/Midi) (MIT).
 - **Morceaux de démonstration** (`public/morceaux/`) : gravures du

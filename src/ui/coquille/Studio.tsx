@@ -13,6 +13,8 @@ import { Playlist } from '../panneaux/Playlist'
 import { VueInstrument } from '../panneaux/VueInstrument'
 import { BarreTransport } from './BarreTransport'
 import { NavigationPanneaux } from './NavigationPanneaux'
+import { useEcranEtroit } from '../commun/useEcranEtroit'
+import { PanneauUnique } from './PanneauUnique'
 import { type ApiDock, basculerPanneau, CLE_DISPOSITION, dispositionParDefaut, type IdPanneau, ouvrirPanneau } from './panneaux'
 import { noteDuCode } from '../../musique/clavier'
 import { actionPourTouche, toucheDepuisEvenement } from './raccourcis'
@@ -68,6 +70,7 @@ function ecrireDisposition(api: DockviewApi): void {
 
 export function Studio() {
   const { message, basculerLecture, arreter, changerOctave, jouerNote, relacherNote, relacherTout } = useStudio()
+  const etroit = useEcranEtroit()
   const apiRef = useRef<DockviewApi | null>(null)
   const [ouverts, setOuverts] = useState<ReadonlySet<string>>(new Set())
 
@@ -153,9 +156,9 @@ export function Studio() {
         </p>
       )}
       <main className="min-h-0 flex-1">
-        <DockviewReact components={composants} onReady={surPret} theme={theme} messages={messages} />
+        {etroit ? <PanneauUnique /> : <DockviewReact components={composants} onReady={surPret} theme={theme} messages={messages} />}
       </main>
-      <footer className="flex items-center justify-between gap-2 border-t border-black/50 bg-panneau px-2 py-0.5 text-[11px] text-discret">
+      <footer hidden={etroit} className="flex items-center justify-between gap-2 border-t border-black/50 bg-panneau px-2 py-0.5 text-[11px] text-discret">
         <span className="truncate">Espace : lecture/pause · Maj+Espace : arrêt · F5 à F9 : panneaux · lettres : jouer</span>
         <span className="flex items-center gap-2">
           <NavigationPanneaux ouvrirPanneau={ouvrir} panneauxOuverts={ouverts} />

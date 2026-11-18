@@ -136,3 +136,22 @@ test('sur un écran étroit, la barre se replie sans déborder', async ({ page }
   expect(debord).toBeLessThanOrEqual(0)
   await page.screenshot({ path: 'test-results/coquille-etroit.png' })
 })
+
+test('sur un téléphone : un panneau à la fois, choisi par onglets, et rien ne déborde', async ({ page }) => {
+  await page.setViewportSize({ width: 400, height: 800 })
+  await expect(page.getByTestId('panneau-unique')).toBeVisible()
+  await expect(page.locator('.dv-tab')).toHaveCount(0)
+  await expect(page.getByTestId('canal').first()).toBeVisible()
+  await page.getByTestId('onglet-mixer').click()
+  await expect(page.getByTestId('onglet-mixer')).toHaveAttribute('aria-selected', 'true')
+  await expect(page.getByTestId('canal')).toHaveCount(0)
+  await expect(page.getByRole('tabpanel', { name: 'Mixer' })).toBeVisible()
+  await page.getByTestId('onglet-instrument').click()
+  await expect(page.getByTestId('jouer-partie')).toBeVisible()
+  // la page elle-même ne défile pas en largeur (seuls les panneaux défilent)
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(400)
+  await page.screenshot({ path: 'test-results/studio-telephone.png' })
+  // revenu sur grand écran : les panneaux ancrables reviennent
+  await page.setViewportSize({ width: 1280, height: 720 })
+  await expect(page.locator('.dv-tab')).toHaveCount(6)
+})

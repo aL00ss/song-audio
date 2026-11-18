@@ -48,5 +48,7 @@ export async function rendre(moteur: MoteurSon, projet: Projet, mode: ModeLectur
 }
 
 export async function exporterWav(moteur: MoteurSon, projet: Projet, mode: ModeLecture): Promise<Blob> {
-  return audioBufferToWav(await rendre(moteur, projet, mode))
+  // pas de normalisation : le fichier garde le niveau du mixage (le limiteur du maître évite
+  // la saturation), comme on l'entend dans le studio
+  return audioBufferToWav(await rendre(moteur, projet, mode), { normalizeAudio: false })
 }

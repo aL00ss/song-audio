@@ -125,7 +125,16 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   notes s'allument en guide, la lecture démarre et chaque note jouée est comptée juste (même
   hauteur, à un pas près, la fin de boucle rejoignant le début) ou fausse. 83 tests unitaires,
   54 tests navigateur.
-- [ ] Étape 9 — finitions, sons améliorés mais légers
+- [ ] **Étape 9 — finitions, sons améliorés mais légers** (en cours)
+  - Fait : banques supplémentaires chargées à la demande (seulement si le projet utilise un de
+    leurs instruments ; GeneralUser GS joue en attendant, puis passe derrière elles) :
+    piano à queue Salamander allégé (17 Mo, 5 couches de vélocité) ; cordes (11 Mo), cuivres
+    (5 Mo) et bois (4,5 Mo) de VSCO 2 CE, avec hauteurs mesurées, boucles en fondu enchaîné et
+    niveaux alignés sur GeneralUser GS à ±3 dB ; outils de construction dans `outils/banques`.
+    Export WAV sans normalisation (il garde le niveau du mixage). Téléphone : un panneau à la
+    fois, choisi par onglets. 86 tests unitaires, 63 tests navigateur (justesse et tenue de
+    chaque famille, mesurées sur un rendu hors ligne).
+  - Reste : performance avec 16 instruments, tests de chaque panneau.
 
 ## Notes techniques vérifiées
 

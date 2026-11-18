@@ -15,6 +15,9 @@ export interface BanqueSupplementaire {
 /** Dans l'ordre de priorité : la première l'emporte, GeneralUser GS vient en dernier. */
 export const BANQUES: readonly BanqueSupplementaire[] = [
   { id: 'piano', fichier: 'piano-salamander.sf3', nom: 'Piano à queue', programmes: [0] },
+  { id: 'cordes', fichier: 'orchestre-cordes.sf3', nom: 'Cordes', programmes: [40, 41, 42, 43, 44, 45, 46, 48, 49] },
+  { id: 'cuivres', fichier: 'orchestre-cuivres.sf3', nom: 'Cuivres', programmes: [56, 57, 58, 59, 60] },
+  { id: 'bois', fichier: 'orchestre-bois.sf3', nom: 'Bois', programmes: [68, 70, 71, 72, 73] },
 ]
 
 /** Identifiant de GeneralUser GS dans le synthétiseur. */

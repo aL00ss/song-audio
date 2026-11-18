@@ -73,6 +73,8 @@ class Preset:
     banque: int
     programme: int
     instrument: int
+    # générateurs de la zone du preset, ajoutés à ceux de l'instrument (attaque plus lente…)
+    generateurs: list[tuple[int, int]] = field(default_factory=list)
 
 
 def plage(bas: int, haut: int) -> int:
@@ -160,6 +162,8 @@ def ecrire_sf3(
     for p in presets:
         phdr.append(_nom(p.nom) + struct.pack('<HHHIII', p.programme, p.banque, len(pbag), 0, 0, 0))
         pbag.append(struct.pack('<HH', len(pgen), 0))
+        for g, v in p.generateurs:
+            pgen.append(struct.pack('<Hh', g, v))
         pgen.append(struct.pack('<HH', INSTRUMENT, p.instrument))
     phdr.append(_nom('EOP') + struct.pack('<HHHIII', 0, 0, len(pbag), 0, 0, 0))
     pbag.append(struct.pack('<HH', len(pgen), 0))

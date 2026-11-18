@@ -25,7 +25,7 @@ export function creerDemo(): Projet {
   projet = piano.projet
   const basse = ajouterCanal(projet, { programme: 33, nom: 'Basse' })
   projet = basse.projet
-  const cordes = ajouterCanal(projet, { programme: 48, nom: 'Cordes', volume: 0.55 })
+  const cordes = ajouterCanal(projet, { programme: 48, nom: 'Cordes', volume: 0.65 })
   projet = cordes.projet
   const batterie = ajouterCanal(projet, { batterie: true, nom: 'Batterie' })
   projet = batterie.projet
