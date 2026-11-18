@@ -5,6 +5,7 @@ import { audio, useStudio } from '../../etat/studio'
 import { formaterPosition, formaterSecondes, ticsEnSecondes } from '../../musique/temps'
 import { BoutonRotatif } from '../commun/BoutonRotatif'
 import { useImage } from '../commun/useImage'
+import { MenuFichier } from './MenuFichier'
 
 const bouton = 'h-7 rounded border border-bord bg-panneau-2 px-2.5 hover:border-discret disabled:opacity-40'
 
@@ -23,7 +24,7 @@ function Afficheur({ testId, titre, children }: { testId: string; titre: string;
 export function BarreTransport() {
   const {
     transport, chargement, projet, enregistrement, mode, basculerEnregistrement, basculerLecture, arreter, changerTempo,
-    changerVolumeMaitre, changerMode, choisirPattern, nouveauPattern, dupliquerPattern,
+    changerVolumeMaitre, changerMode, choisirPattern, nouveauPattern, dupliquerPattern, exportEnCours,
   } = useStudio()
   const position = useImage(() => audio.transport?.position ?? 0)
   const pret = chargement.phase === 'pret'
@@ -32,13 +33,17 @@ export function BarreTransport() {
       ? `Chargement des sons… ${Math.round(chargement.progression * 100)} %`
       : chargement.phase === 'erreur'
         ? chargement.message
-        : 'Prêt'
+        : exportEnCours
+          ? 'Export WAV en cours…'
+          : 'Prêt'
 
   return (
     <header className="flex flex-wrap items-center gap-2 border-b border-black/50 bg-gradient-to-b from-[#2f353d] to-[#262b32] px-2 py-1.5">
       <span className="mr-1 text-[13px] font-bold tracking-wide">
         song<span className="text-accent">-audio</span>
       </span>
+
+      <MenuFichier />
 
       <div className="flex items-center gap-1" role="group" aria-label="Transport">
         <button

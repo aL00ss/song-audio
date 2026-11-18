@@ -26,6 +26,10 @@ pendant la lecture et sur laquelle on peut jouer. Le plan complet est dans
   (tout le morceau)
 - Vues dédiées : manche de guitare et de basse (doigté calculé), cordes frottées, harpe,
   pistons des cuivres
+- Jouer avec l'orchestre : la partie d'un instrument se tait et sert de guide, on la joue
+  soi-même et les notes justes sont comptées
+- Menu Fichier : ouvrir et enregistrer un projet, exporter en MIDI ou en WAV ; le projet est
+  gardé automatiquement dans le navigateur
 
 - Modèle de projet (canaux, patterns, playlist, mixage), sauvegarde JSON vérifiée
 - Import de fichiers MIDI multi-pistes : chaque piste garde son instrument General MIDI,

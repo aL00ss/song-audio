@@ -3,8 +3,10 @@
 // est transmise.
 
 import { Midi } from '@tonejs/midi'
+import { get as lireStockage, set as ecrireStockage } from 'idb-keyval'
 import { produce } from 'immer'
 import { create } from 'zustand'
+import { exporterWav } from '../audio/exportWav'
 import { MoteurSon } from '../audio/moteur'
 import { type EtatTransport, type ModeLecture, Transport } from '../audio/transport'
 import { creerDemo } from '../projet/demo'
@@ -12,6 +14,9 @@ import { depuisMidi } from '../projet/importMidi'
 import { ajouterCanal, attribuerCanauxMidi, type Canal, creerProjet, modifierCanal, type PisteMixage, type Projet } from '../projet/modele'
 import { definirNombreDePas, definirNoteDefaut, definirPas, definirVelocitePas } from '../projet/pas'
 import * as playlist from '../projet/playlist'
+import { versMidiOctets } from '../projet/exportMidi'
+import { notesAttendues, noteJuste } from '../projet/partie'
+import { deserialiser, ErreurProjet, serialiser } from '../projet/serialisation'
 import { BASE_DEFAUT, decalerBase, detecterDisposition, type DispositionClavier } from '../musique/clavier'
 import type { NoteMusicale } from '../projet/modele'
 
@@ -80,7 +85,24 @@ interface EtatStudio {
   jouerNote(hauteur: number, velocite?: number, canalId?: string): void
   relacherNote(hauteur: number, canalId?: string): void
   relacherTout(): void
+  // ---- fichiers
+  /** Le projet au format du studio (JSON), pour l'enregistrer. */
+  projetEnJson(): string
+  ouvrirProjet(fichier: File): Promise<void>
+  exporterMidi(): Uint8Array
+  /** Rendu WAV hors ligne (null en cas d'échec : un message l'explique). */
+  exporterWav(): Promise<Blob | null>
+  exportEnCours: boolean
+  // ---- jouer avec l'orchestre
+  partie: { canalId: string; justes: number; fausses: number; etaitMuet: boolean } | null
+  /** Le canal se tait (sa partie sert de guide) et l'on joue sa partie soi-même. */
+  commencerPartie(canalId?: string): void
+  arreterPartie(): void
 }
+
+/** Clé de la sauvegarde automatique (IndexedDB). */
+export const CLE_SAUVEGARDE = 'song-audio.projet'
+const DELAI_SAUVEGARDE = 800
 
 /** Notes tenues en direct : « canal:hauteur » -> nombre d'appuis, instant de début (tic absolu), vélocité. */
 const tenues = new Map<string, { appuis: number; debut: number | null; velocite: number }>()
@@ -136,6 +158,33 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     return true
   }
 
+  /** Reprend le projet de la dernière visite, s'il y en a un et qu'il est lisible. */
+  const restaurer = async () => {
+    const auDepart = get().projet
+    try {
+      const texte = await lireStockage<string>(CLE_SAUVEGARDE)
+      if (!texte || get().projet !== auDepart) return // rien de gardé, ou déjà modifié entre-temps
+      const projet = deserialiser(texte)
+      set({ projet, canalSelectionne: projet.canaux[0]?.id ?? null })
+    } catch (erreur) {
+      console.warn('Sauvegarde automatique illisible, ignorée :', erreur)
+    }
+  }
+
+  /** Enregistre le projet dans le navigateur peu après chaque modification. */
+  const sauvegarderAutomatiquement = () => {
+    let minuterie: ReturnType<typeof setTimeout> | null = null
+    useStudio.subscribe((etat, avant) => {
+      if (etat.projet === avant.projet) return
+      if (minuterie) clearTimeout(minuterie)
+      minuterie = setTimeout(() => {
+        ecrireStockage(CLE_SAUVEGARDE, serialiser(useStudio.getState().projet)).catch(() => {
+          // stockage refusé (navigation privée stricte) : rien n'est gardé, le studio continue
+        })
+      }, DELAI_SAUVEGARDE)
+    })
+  }
+
   /** Enregistre une modification du projet et la transmet au son (même en pleine lecture). */
   const appliquer = (projet: Projet) => {
     if (projet === get().projet) return
@@ -155,12 +204,16 @@ export const useStudio = create<EtatStudio>()((set, get) => {
     initialiser() {
       initialisation ??= (async () => {
         try {
+          // la sauvegarde se lit pendant le téléchargement des sons
+          const restauration = restaurer()
           moteur = await MoteurSon.creer(URL_BANQUE, (recus, total) => {
             set({ chargement: { phase: 'son', progression: total ? recus / total : 0 } })
           })
           transport = new Transport(moteur, moteur)
           transport.surEtat((etat) => set({ transport: etat }))
+          await restauration
           synchroniser(get().projet)
+          sauvegarderAutomatiquement()
           set({ chargement: { phase: 'pret' } })
           const disposition = await detecterDisposition()
           set({ clavier: { ...get().clavier, disposition } })
@@ -174,6 +227,7 @@ export const useStudio = create<EtatStudio>()((set, get) => {
 
     remplacerProjet(projet) {
       transport?.arreter()
+      set({ partie: null })
       set({ projet, message: null, canalSelectionne: projet.canaux[0]?.id ?? null })
       synchroniser(projet)
     },
@@ -360,6 +414,12 @@ export const useStudio = create<EtatStudio>()((set, get) => {
       moteur.noteOn(midi, hauteur, v)
       const enLecture = transport?.etat === 'lecture'
       tenues.set(cle, { appuis: 1, debut: enLecture ? transport!.positionAbsolue : null, velocite: v })
+      // jouer avec l'orchestre : la note est-elle celle qu'attendait la partie ?
+      const { partie } = get()
+      if (partie && partie.canalId === canalId && enLecture && transport) {
+        const juste = noteJuste(notesAttendues(get().projet, canalId, transport.mode), transport.position, hauteur, transport.longueur)
+        set({ partie: { ...partie, justes: partie.justes + (juste ? 1 : 0), fausses: partie.fausses + (juste ? 0 : 1) } })
+      }
     },
 
     relacherNote(hauteur, canalId = get().canalSelectionne ?? undefined) {
@@ -380,6 +440,53 @@ export const useStudio = create<EtatStudio>()((set, get) => {
         const notes = pattern?.notes[canalId] ?? []
         get().remplacerNotes(canalId, [...notes, { tic, duree, hauteur, velocite: tenue.velocite }])
       }
+    },
+
+    projetEnJson() {
+      return serialiser(get().projet)
+    },
+
+    async ouvrirProjet(fichier) {
+      try {
+        get().remplacerProjet(deserialiser(await fichier.text()))
+      } catch (erreur) {
+        set({ message: erreur instanceof ErreurProjet ? `Projet illisible : ${erreur.message}` : `Projet illisible : ${fichier.name}` })
+      }
+    },
+
+    exporterMidi() {
+      return versMidiOctets(get().projet, { mode: get().mode })
+    },
+
+    exportEnCours: false,
+    async exporterWav() {
+      if (!moteur || get().exportEnCours) return null
+      set({ exportEnCours: true, message: null })
+      try {
+        return await exporterWav(moteur, get().projet, get().mode)
+      } catch (erreur) {
+        console.error(erreur)
+        set({ message: "L'export WAV a échoué." })
+        return null
+      } finally {
+        set({ exportEnCours: false })
+      }
+    },
+
+    partie: null,
+    commencerPartie(canalId = get().canalSelectionne ?? undefined) {
+      const canal = get().projet.canaux.find((c) => c.id === canalId)
+      if (!canal) return
+      if (get().partie) get().arreterPartie()
+      set({ partie: { canalId: canal.id, justes: 0, fausses: 0, etaitMuet: canal.muet }, canalSelectionne: canal.id })
+      get().modifierCanal(canal.id, { muet: true })
+      if (transport?.etat !== 'lecture') void get().basculerLecture()
+    },
+    arreterPartie() {
+      const { partie } = get()
+      if (!partie) return
+      set({ partie: null })
+      get().modifierCanal(partie.canalId, { muet: partie.etaitMuet })
     },
 
     relacherTout() {

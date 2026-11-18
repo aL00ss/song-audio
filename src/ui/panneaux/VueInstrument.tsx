@@ -202,10 +202,34 @@ function Batterie({ canal }: { canal: Canal }) {
   )
 }
 
-export function VueInstrument() {
-  const { projet, canalSelectionne } = useStudio()
-  const canal = projet.canaux.find((c) => c.id === canalSelectionne)
-  if (!canal) return <p className="p-3 text-discret">Sélectionnez un instrument dans le Channel Rack.</p>
+/** « Jouer avec l'orchestre » : la partie du canal se tait, s'allume en guide, et l'on compte les notes justes. */
+function BarrePartie({ canal }: { canal: Canal }) {
+  const { partie, commencerPartie, arreterPartie } = useStudio()
+  const enCours = partie?.canalId === canal.id
+  const total = enCours ? partie.justes + partie.fausses : 0
+  return (
+    <div className="flex shrink-0 items-center gap-2 border-b border-bord bg-panneau-2 px-2 py-1 text-[12px]">
+      <button
+        type="button"
+        data-testid="jouer-partie"
+        aria-pressed={enCours}
+        onClick={() => (enCours ? arreterPartie() : commencerPartie(canal.id))}
+        title="La partie de cet instrument se tait et sert de guide : jouez-la vous-même avec le reste du morceau"
+        className="h-6 rounded border border-bord px-2 hover:border-discret aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:font-semibold aria-pressed:text-black"
+      >
+        {enCours ? 'Arrêter de jouer la partie' : 'Jouer la partie'}
+      </button>
+      {enCours && (
+        <span data-testid="score-partie" className="text-discret" aria-live="polite">
+          <span className="text-actif">{partie.justes} justes</span> · <span className="text-red-400">{partie.fausses} fausses</span>
+          {total > 0 && <> · {Math.round((partie.justes / total) * 100)} %</>}
+        </span>
+      )}
+    </div>
+  )
+}
+
+function VueDuCanal({ canal }: { canal: Canal }) {
   if (canal.batterie) return <Batterie canal={canal} />
   const accordage = accordagePour(canal.programme)
   if (accordage) return <Manche canal={canal} accordage={accordage} />
@@ -221,4 +245,18 @@ export function VueInstrument() {
     )
   }
   return <Clavier canal={canal} />
+}
+
+export function VueInstrument() {
+  const { projet, canalSelectionne } = useStudio()
+  const canal = projet.canaux.find((c) => c.id === canalSelectionne)
+  if (!canal) return <p className="p-3 text-discret">Sélectionnez un instrument dans le Channel Rack.</p>
+  return (
+    <div className="flex h-full flex-col">
+      <BarrePartie canal={canal} />
+      <div className="min-h-0 flex-1">
+        <VueDuCanal canal={canal} />
+      </div>
+    </div>
+  )
 }

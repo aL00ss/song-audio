@@ -64,15 +64,6 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   dépôt-ci (song-audio) reste la version web et doit continuer de fonctionner sur
   https://al00ss.github.io/song-audio/.
 
-## Étape 8 en cours (pause du 2026-11-17)
-
-- Fait et testé : export MIDI (`src/projet/exportMidi.ts`, 5 tests unitaires dont l'aller-retour).
-- Écrit, pas encore testé ni branché dans l'interface : export WAV hors ligne
-  (`src/audio/exportWav.ts`) et `routageMixer` partagé dans `src/audio/moteur.ts`.
-- Reste : menu Fichier (ouvrir/enregistrer le projet, exporter MIDI et WAV), sauvegarde
-  automatique, « jouer avec l'orchestre » (partie coupée servant de guide, notes justes
-  comptées), tests navigateur, puis commit de fin d'étape.
-
 ## Avancement
 
 - [x] **Étape 0 — fondations** : modèle, sauvegarde, import MIDI, transport, moteur ; 27 tests
@@ -126,7 +117,15 @@ nom, ni le logo, ni les icônes, ni l'habillage exact d'un logiciel existant.
   frettes pour violon, alto, violoncelle, contrebasse ; harpe (cordes diatoniques colorées,
   glissando) ; pistons des cuivres (trompette, tuba, cor) au-dessus du clavier ; les bois restent
   joués au clavier. 75 tests unitaires, 49 tests navigateur.
-- [ ] Étape 8 — jouer avec l'orchestre, export
+- [x] **Étape 8 — jouer avec l'orchestre, export** : menu Fichier (nouveau, ouvrir et enregistrer
+  un projet `.song-audio.json`, exporter en MIDI, exporter en WAV) ; export WAV rendu hors ligne
+  avec le même synthétiseur, le même état des canaux et le même mixer (3 s de queue) ;
+  sauvegarde automatique dans le navigateur (IndexedDB, 0,8 s après chaque modification) et
+  reprise au démarrage ; « Jouer la partie » dans la vue d'instrument : le canal se tait, ses
+  notes s'allument en guide, la lecture démarre et chaque note jouée est comptée juste (même
+  hauteur, à un pas près, la fin de boucle rejoignant le début) ou fausse. 83 tests unitaires,
+  54 tests navigateur.
+- [ ] Étape 9 — finitions, sons améliorés mais légers
 
 ## Notes techniques vérifiées
 
